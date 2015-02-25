@@ -21,17 +21,25 @@ from radiometric_normalization.transformation import radiometric_transformation
 
 
 class Tests(unittest.TestCase):
+    def test_get_transform_function(self):
+        self.assertEqual(
+            radiometric_transformation.get_transform_function(
+                'linear_transformation'),
+            radiometric_transformation.linear_transformation_to_lut)
+        self.assertRaises(Exception,
+                          radiometric_transformation.get_transform_function,
+                          'unknown')
 
     def test_pifs_to_pifset(self):
         pif0 = {'coordinates': (0, 0),
                 'weighting': 0.5,
-                'ref_values': (1, 2, 3, 4),
-                'candidate_values': (2, 3, 4, 5)}
+                'reference': (1, 2, 3, 4),
+                'candidate': (2, 3, 4, 5)}
 
         pif1 = {'coordinates': (0, 1),
                 'weighting': 0.75,
-                'ref_values': (3, 3, 3, 3),
-                'candidate_values': (4, 4, 4, 4)}
+                'reference': (3, 3, 3, 3),
+                'candidate': (4, 4, 4, 4)}
         test_pifs = [pif0, pif1]
 
         pifset = radiometric_transformation.pifs_to_pifset(test_pifs)
@@ -63,14 +71,12 @@ class Tests(unittest.TestCase):
             radiometric_transformation.linear_relationship(test_pifset)
 
         gains = [tf.gain for tf in transformations]
-        expected_gains = [0, 2, 1, 0]
-        assert gains == expected_gains, \
-            "Gains: got {}, expected {}".format(gains, expected_gains)
+        expected_gains = [1, 2, 1, 1]
+        self.assertEqual(gains, expected_gains)
 
         offsets = [tf.offset for tf in transformations]
-        expected_offsets = [2, 0, 1, 3]
-        assert offsets == expected_offsets, \
-            "Offsets: got {}, expected {}".format(offsets, expected_offsets)
+        expected_offsets = [1, 0, 1, -1]
+        self.assertEqual(offsets, expected_offsets)
 
     def test_linear_transformation_to_lut(self):
         test_linear_transform = \
