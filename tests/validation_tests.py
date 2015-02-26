@@ -14,10 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 import unittest
-import os
 
 import numpy
-from osgeo import gdal, gdal_array
 
 from radiometric_normalization import gimage
 from radiometric_normalization.validation import validation
