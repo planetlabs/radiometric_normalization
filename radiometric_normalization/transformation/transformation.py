@@ -9,7 +9,7 @@ PIFSet = namedtuple('PIFSet', 'reference, candidate, weight')
 LinearTransformation = namedtuple('LinearTransformation', 'gain, offset')
 
 
-def calculate_lut(pifs, method='linear_transformation'):
+def generate(pifs, method='linear_relationship'):
     '''Calculates the look-up table that applies a radiometric transformation
     to the candidate image based on pseudo-invariant features (pifs). Each
     pif is a dict with fields 'coordinates', 'reference',
@@ -21,22 +21,25 @@ def calculate_lut(pifs, method='linear_transformation'):
     'coordinates' is a tuple of length 2
 
     :param pifs: list of pifs (dicts)
-    :param output_path: path save the rgb image
-    :param args: argument parser
+    :param method: transformation generation method
+    :param output transformations: list of LinearTransformations of length
+    equal to number of entries in input pif 'reference' and 'candidate'
     '''
     pif_set = pifs_to_pifset(pifs)
-    transformations = linear_relationship(pif_set)
-
     transform_fcn = get_transform_function(method)
-    luts = [transform_fcn(lt) for lt in transformations]
+    return transform_fcn(pif_set)
+
+
+def transformations_to_luts(transformations):
+    luts = [linear_transformation_to_lut(lt) for lt in transformations]
     return luts
 
 
 def get_transform_function(method):
-    if method == 'linear_transformation':
-        fcn = linear_transformation_to_lut
+    if method == 'linear_relationship':
+        fcn = linear_relationship
     else:
-        raise Exception('Unrecognized transformation')
+        raise Exception('Unrecognized transformation method')
     return fcn
 
 
@@ -69,8 +72,10 @@ def linear_relationship(pif_set):
              for (c_std, r_std) in zip(c_stds, r_stds)]
     offsets = r_means - gains * c_means
 
-    transformations = [LinearTransformation(gain, offset)
-                       for (gain, offset) in zip(gains, offsets)]
+    transformations = []
+    for (gain, offset) in zip(gains, offsets):
+        logging.info("Transformation: gain {}, offset {}".format(gain, offset))
+        transformations.append(LinearTransformation(gain, offset))
 
     return transformations
 

@@ -17,17 +17,16 @@ import unittest
 
 import numpy
 
-from radiometric_normalization.transformation import radiometric_transformation
+from radiometric_normalization.transformation import transformation
 
 
 class Tests(unittest.TestCase):
     def test_get_transform_function(self):
         self.assertEqual(
-            radiometric_transformation.get_transform_function(
-                'linear_transformation'),
-            radiometric_transformation.linear_transformation_to_lut)
+            transformation.get_transform_function('linear_relationship'),
+            transformation.linear_relationship)
         self.assertRaises(Exception,
-                          radiometric_transformation.get_transform_function,
+                          transformation.get_transform_function,
                           'unknown')
 
     def test_pifs_to_pifset(self):
@@ -42,7 +41,7 @@ class Tests(unittest.TestCase):
                 'candidate': (4, 4, 4, 4)}
         test_pifs = [pif0, pif1]
 
-        pifset = radiometric_transformation.pifs_to_pifset(test_pifs)
+        pifset = transformation.pifs_to_pifset(test_pifs)
 
         expected_reference = numpy.array(
             [[1, 2, 3, 4], [3, 3, 3, 3]])
@@ -64,11 +63,11 @@ class Tests(unittest.TestCase):
              [2, 6, 5, 3]])
         test_weight = numpy.array([0.5, 0.75])
 
-        test_pifset = radiometric_transformation.PIFSet(
-            test_reference, test_candidate, test_weight)
+        test_pifset = transformation.PIFSet(test_reference,
+                                            test_candidate,
+                                            test_weight)
 
-        transformations = \
-            radiometric_transformation.linear_relationship(test_pifset)
+        transformations = transformation.linear_relationship(test_pifset)
 
         gains = [tf.gain for tf in transformations]
         expected_gains = [1, 2, 1, 1]
@@ -80,9 +79,9 @@ class Tests(unittest.TestCase):
 
     def test_linear_transformation_to_lut(self):
         test_linear_transform = \
-            radiometric_transformation.LinearTransformation(gain=1, offset=2)
+            transformation.LinearTransformation(gain=1, offset=2)
 
-        lut = radiometric_transformation.linear_transformation_to_lut(
+        lut = transformation.linear_transformation_to_lut(
             test_linear_transform)
 
         expected_values = list(range(2, 65536)) + 2 * [65535]
