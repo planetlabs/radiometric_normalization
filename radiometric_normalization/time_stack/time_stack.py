@@ -8,7 +8,7 @@ from osgeo import gdal, gdal_array
 
 
 def generate(image_paths, method='identity',
-            output_path='time_stack.tif', output_nodata=2 ** 15 - 1):
+             output_path='time_stack.tif', output_nodata=2 ** 15 - 1):
     ''' This takes a list of image paths and creates a time stack image.
 
     It assumes that all images
@@ -33,6 +33,8 @@ def generate(image_paths, method='identity',
     output_bands, mask = _calculate_value_and_weight(
         all_bands, nodata, method, output_nodata)
     _write_out_bands(output_bands, mask, output_path, output_nodata)
+
+    return output_path
 
 
 def _read_in_bands(image_paths):
