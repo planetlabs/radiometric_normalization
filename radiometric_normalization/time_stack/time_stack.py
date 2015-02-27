@@ -7,8 +7,7 @@ import logging
 from osgeo import gdal, gdal_array
 
 
-def generate(image_paths, method='identity',
-            output_path='time_stack.tif', output_nodata=2 ** 15 - 1):
+def generate(image_paths, method='identity', output_path='time_stack.tif'):
     ''' This takes a list of image paths and creates a time stack image.
 
     It assumes that all images
@@ -17,21 +16,26 @@ def generate(image_paths, method='identity',
         - all the images are of the same size
         - all the images have the same nodata value
 
-    The output nodata value is 2 ** 15 - 1
-
-    Since the output file is only meant to be used internally, the
-    geographic information isn't carried over to the output file.
+    The output file is only supposed to be used internally so options to change
+    the nodata value and the datatype are not exposed.
+    - The output nodata value is 2 ** 15 - 1
+    - The output image data type is uint16
+    - Since the output file is only meant to be used internally, the
+        geographic information isn't carried over to the output file.
 
     Input:
         image_paths (list of str): A list of the input file paths
         method (str): Time stack creation method [identity]
         output_path (str): A path to write the file to
-        output_nodata (number): The no data value for the output image
     '''
 
-    all_bands, nodata = _read_in_bands(image_paths)
-    output_bands, mask = _calculate_value_and_weight(
-        all_bands, nodata, method, output_nodata)
+    output_nodata = 2 ** 15 - 1
+    output_datatype = numpy.uint16
+
+    all_bands = _read_in_bands(image_paths)
+    if method is 'identity':
+        output_bands, mask = _mean_with_uniform_weight(
+            all_bands, output_nodata, output_datatype)
     _write_out_bands(output_bands, mask, output_path, output_nodata)
 
 
@@ -43,15 +47,15 @@ def _read_in_bands(image_paths):
         image_paths (list of str): A list of the input file paths
 
     Output:
-        all_bands (list of arrays of numbers): A list of each band,
-            each band consisting of a stacked array of the images
-        nodata (number): The nodata value for this raster set
+        all_bands (list of list of arrays): A list of each band,
+            each band consisting of a list of images each entry being a
+            masked array of the image data
     '''
 
     all_images, nodata = _read_in_gdal_images(image_paths)
-    all_bands = _organise_images_to_bands(all_images)
+    all_bands = _organise_images_to_bands(all_images, nodata)
 
-    return all_bands, nodata
+    return all_bands
 
 
 def _read_in_gdal_images(image_paths):
@@ -85,13 +89,16 @@ def _read_in_gdal_images(image_paths):
             '%s has a different size' % image_path
         assert image_ds.GetRasterBand(1).GetNoDataValue() == nodata, \
             '%s has a different nodata value' % image_path
+        alpha_band = image_ds.GetRasterBand(image_ds.RasterCount)
+        assert alpha_band.GetColorInterpretation() != gdal.GCI_AlphaBand, \
+            '%s has an alpha band' % image_path
 
         all_images.append(image_ds.ReadAsArray())
 
     return all_images, nodata
 
 
-def _organise_images_to_bands(all_images):
+def _organise_images_to_bands(all_images, nodata):
     ''' Organises the arrays of images by band
 
     Input:
@@ -99,34 +106,32 @@ def _organise_images_to_bands(all_images):
             each image consisting of a stacked array of the bands
 
     Output:
-        all_bands (list of arrays of numbers): A list of each band,
-            each band consisting of a stacked array of the images
+        all_bands (list of list of arrays): A list of each band,
+            each band consisting of a list of images each entry being a
+            masked array of the image data
     '''
 
     no_images = len(all_images)
-    no_bands, rows, cols = all_images[0].shape
+    no_bands, _, _ = all_images[0].shape
     all_bands = []
     for band in range(no_bands):
-        one_band = numpy.zeros((no_images, rows, cols),
-                               dtype=all_images[0].dtype)
-        for image in range(no_images):
-            one_band[image, :, :] = all_images[image][band, :, :]
+        one_band = \
+            [numpy.ma.masked_equal(all_images[image][band, :, :], nodata)
+             for image in range(no_images)]
         all_bands.append(one_band)
 
     return all_bands
 
 
-def _calculate_value_and_weight(all_bands, nodata,
-                                method, output_nodata):
+def _mean_with_uniform_weight(all_bands, output_nodata, output_datatype):
     ''' Calculates the time stack from a list of the bands
 
     Input:
-        all_bands (list of arrays of numbers): A list of each band,
-            each band consisting of a stacked array of the images
-        nodata (number): The nodata value for this raster set
-        method (str): Change between different methods of calculating the
-            time stack
+        all_bands (list of list of arrays): A list of each band,
+            each band consisting of a list of images each entry being a
+            masked array of the image data
         output_nodata (number): The no data value for the output image
+        output_datatype (numpy datatype): Data type for the output image
 
     Output:
         output_bands (list of arrays of numbers): A list of arrays, each
@@ -135,26 +140,23 @@ def _calculate_value_and_weight(all_bands, nodata,
             time stack
     '''
 
-    if method is 'identity':
-        logging.info('Identity method chosen.')
+    logging.info('Time stack analysis is using: Mean with uniform weight.')
 
-        _, rows, cols = all_bands[0].shape
-        no_bands = len(all_bands)
-        output_bands = numpy.zeros((no_bands, rows, cols),
-                                   dtype=all_bands[0].dtype)
-        for band in range(no_bands):
-            for row in range(rows):
-                for col in range(cols):
-                    valid_pixels = all_bands[band][numpy.nonzero(
-                        all_bands[band][:, row, col] != nodata), row, col]
-                    if len(valid_pixels) == 0:
-                        output_bands[band, row, col] = output_nodata
-                    else:
-                        output_bands[band, row, col] = numpy.mean(valid_pixels)
+    rows, cols = all_bands[0][0].shape
+    all_bands_mask = numpy.zeros((rows, cols))  # 0 for valid; 1 for nodata
+    output_bands = []
+    for band in all_bands:
+        masked_mean = numpy.ma.mean(band, axis=0)
+        band_mean = masked_mean.data
+        band_mask = masked_mean.mask
+        band_mean[numpy.nonzero(band_mask)] = output_nodata
+        all_bands_mask = numpy.logical_or(band_mask, all_bands_mask)
+        output_bands.append(band_mean.astype(output_datatype))
 
-        mask = numpy.ones((rows, cols), dtype=all_bands[0].dtype)*65535
+    output_mask = numpy.logical_not(all_bands_mask).astype(output_datatype) * \
+        numpy.iinfo(output_datatype).max
 
-    return output_bands, mask
+    return output_bands, output_mask
 
 
 def _write_out_bands(output_bands, mask,
@@ -170,14 +172,13 @@ def _write_out_bands(output_bands, mask,
         output_nodata (number): The no data value for the output image
     '''
 
-    no_bands, rows, cols = output_bands.shape
+    no_bands = len(output_bands)
+    rows, cols = output_bands[0].shape
 
     # Set up output file
     options = ['ALPHA=YES']
-    if no_bands == 3:
-        options.append('PHOTOMETRIC=RGB')
     datatype = gdal_array.NumericTypeCodeToGDALTypeCode(
-        output_bands.dtype.type)
+        output_bands[0].dtype.type)
     gdal_ds = gdal.GetDriverByName('GTIFF').Create(
         output_path, cols, rows, no_bands + 1, datatype,
         options=options)
@@ -186,15 +187,10 @@ def _write_out_bands(output_bands, mask,
     for i in range(no_bands):
         gdal_array.BandWriteArray(
             gdal_ds.GetRasterBand(i + 1),
-            output_bands[i, :, :])
+            output_bands[i])
     gdal_ds.GetRasterBand(1).SetNoDataValue(output_nodata)
 
     # Set the alpha band
-    # To conform to 16 bit TIFF alpha expectations transform
-    # alpha to 16bit.
     alpha_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
-    if alpha_band.DataType == gdal.GDT_UInt16:
-        mask = ((mask.astype(numpy.uint32) * 65535) / 255).astype(
-            numpy.uint16)
     gdal_array.BandWriteArray(alpha_band, mask)
     logging.info('Successfully wrote output file as: ' + output_path)
