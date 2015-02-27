@@ -38,6 +38,8 @@ def generate(image_paths, method='identity', output_path='time_stack.tif'):
             all_bands, output_nodata, output_datatype)
     _write_out_bands(output_bands, mask, output_path, output_nodata)
 
+    return output_path
+
 
 def _read_in_bands(image_paths):
     ''' Reads in a list of image paths and outputs a list of numpy arrays

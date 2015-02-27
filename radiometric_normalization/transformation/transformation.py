@@ -3,34 +3,56 @@ from collections import namedtuple
 
 import numpy
 
-# pif:
-# coordinates (int, int)
-# weighting (float, range 0-1)
-# ref_values (tuple, type == 16 bit unsigned int, length = number of bands)
-# candidate_values (tuple, type == 16 bit unsigned int, len = number of bands)}
-PIF = namedtuple('PIF', 'coordinates, weighting, ref_values, candidate_values')
 
 PIFSet = namedtuple('PIFSet', 'reference, candidate, weight')
 
 LinearTransformation = namedtuple('LinearTransformation', 'gain, offset')
 
 
-def calculate_lut(pifs):
-    pif_set = pifs_to_pifset(pifs)
-    transformations = linear_relationship(pif_set)
+def generate(pifs, method='linear_relationship'):
+    '''Calculates the look-up table that applies a radiometric transformation
+    to the candidate image based on pseudo-invariant features (pifs). Each
+    pif is a dict with fields 'coordinates', 'reference',
+    'candidate', and 'weight'.
 
+    'reference' and 'candidate' are tuples with length equal to the number of
+    radiometric bands
+    'weight' is a float
+    'coordinates' is a tuple of length 2
+
+    :param pifs: list of pifs (dicts)
+    :param method: transformation generation method
+    :param output transformations: list of LinearTransformations of length
+    equal to number of entries in input pif 'reference' and 'candidate'
+    '''
+    pif_set = pifs_to_pifset(pifs)
+    transform_fcn = get_transform_function(method)
+    return transform_fcn(pif_set)
+
+
+def transformations_to_luts(transformations):
     luts = [linear_transformation_to_lut(lt) for lt in transformations]
     return luts
 
 
+def get_transform_function(method):
+    if method == 'linear_relationship':
+        fcn = linear_relationship
+    else:
+        raise Exception('Unrecognized transformation method')
+    return fcn
+
+
 def pifs_to_pifset(pifs):
+    '''
+    Creates a PIFSet, where weights, reference values, and candidate
+    values of pifs are combined into separate numpy arrays.
+    '''
     weight = numpy.array([pif['weighting'] for pif in pifs])
-
-    r_values = numpy.array([pif['ref_values'] for pif in pifs],
+    r_values = numpy.array([pif['reference'] for pif in pifs],
                            dtype=numpy.uint16)
-    c_values = numpy.array([pif['candidate_values'] for pif in pifs],
+    c_values = numpy.array([pif['candidate'] for pif in pifs],
                            dtype=numpy.uint16)
-
     return PIFSet(r_values, c_values, weight)
 
 
@@ -41,16 +63,19 @@ def linear_relationship(pif_set):
     r_stds = numpy.std(pif_set.reference, axis=0)
 
     def calculate_gain(c_std, r_std):
+        # if c_std is zero it is a constant image so default gain to 1
         if c_std == 0:
-            return 0
+            return 1
         return float(r_std) / c_std
 
     gains = [calculate_gain(c_std, r_std)
              for (c_std, r_std) in zip(c_stds, r_stds)]
     offsets = r_means - gains * c_means
 
-    transformations = [LinearTransformation(gain, offset)
-                       for (gain, offset) in zip(gains, offsets)]
+    transformations = []
+    for (gain, offset) in zip(gains, offsets):
+        logging.info("Transformation: gain {}, offset {}".format(gain, offset))
+        transformations.append(LinearTransformation(gain, offset))
 
     return transformations
 
