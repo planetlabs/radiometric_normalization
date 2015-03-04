@@ -1,10 +1,7 @@
 import numpy
 
-from radiometric_normalization.time_stack import time_stack
-from radiometric_normalization.pif import pif
-from radiometric_normalization.transformation import transformation
-from radiometric_normalization.validation import validation
-from radiometric_normalization import gimage
+from radiometric_normalization import \
+    time_stack, pif, transformation, validation, gimage
 
 
 def generate_luts(candidate_path, reference_paths, config=None):

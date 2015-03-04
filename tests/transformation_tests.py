@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 import unittest
-
 import numpy
 
-from radiometric_normalization.transformation import transformation
+from radiometric_normalization import transformation
 
 
 class Tests(unittest.TestCase):
