@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 import unittest
-
 import numpy
 
-from radiometric_normalization import gimage
-from radiometric_normalization.validation import validation
+from radiometric_normalization import gimage, validation
 
 
 class Tests(unittest.TestCase):

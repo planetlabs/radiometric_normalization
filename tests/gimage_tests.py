@@ -15,7 +15,6 @@ limitations under the License.
 '''
 import unittest
 import os
-
 import numpy
 
 from osgeo import gdal, gdal_array
