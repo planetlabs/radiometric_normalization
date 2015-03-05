@@ -16,22 +16,6 @@ limitations under the License.
 import logging
 import numpy
 
-from radiometric_normalization import gimage
-
-
-def get_score(image_path1, image_path2, method='rmse'):
-    '''
-    support method configuration
-    '''
-    image1 = gimage.load(image_path1)
-    image2 = gimage.load(image_path2)
-
-    if method == 'rmse':
-        score = sum_of_rmse(image1, image2)
-    else:
-        raise Exception("Unrecognized method specified: {}".format(method))
-    return score
-
 
 def sum_of_rmse(image1, image2):
     assert len(image1.bands) == len(image2.bands)

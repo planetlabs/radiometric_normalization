@@ -16,7 +16,7 @@ limitations under the License.
 import numpy
 
 from radiometric_normalization import \
-    time_stack, pif, transformation, validation, gimage
+    time_stack, pif, transformation, gimage
 
 
 def generate_luts(candidate_path, reference_paths, config=None):
@@ -49,12 +49,3 @@ def apply_luts(input_path, luts, output_path):
     for i in range(len(img.bands)):
         img.bands[i] = apply_lut(img.bands[i], luts[i])
     img.save(output_path)
-
-
-def validate_luts(input_path, reference_path, config=None):
-    if config is None:
-        config = {'validation_method': 'identity'}
-    score = validation.get_score(input_path,
-                                 reference_path,
-                                 method=config['validation_method'])
-    return score
