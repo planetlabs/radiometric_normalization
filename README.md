@@ -1,8 +1,9 @@
-# Radiometric Normalisation #
+# Radiometric Normalization #
 
-This library contains the functions to analyse a set of reference images for features that have a stable level of intensity over the whole reference set and use these features to normalise the intensity distribution of separate candidate image. 
+This library contains the functions to analyse a set of reference images for features that have a stable level of intensity over the whole reference set and use these features to normalize the intensity distribution of separate candidate image.
 
-It was originally created to radiometrically normalise a satellite image to a time series from a reference (atmospherically corrected) dataset. 
+It was originally created to radiometrically normalize a satellite image to a time series from a reference
+(atmospherically corrected) dataset.
 
 ## How to use ##
 
@@ -35,6 +36,6 @@ If successful it should end with:
 
 The code in this repo are kept in two directories: 'radiometric_normalization' and 'tests'
 
-'radiometric_normalization' contains the algorithm and functions of the library. 'normalize.py' is the top level module for the full workflow of the radiometric normalisation implementation.
+'radiometric_normalization' contains the algorithm and functions of the library. 'normalize.py' is the top level module for the full workflow of running radiometric normalization and 'validate.py' is the module for validating radiometric normalization.
 
 'tests' contain unit tests for the functions in the library.

@@ -1,6 +1,6 @@
 # Module overview #
 
-The full radiometric normalisation workflow is contained within normalize.py. It calls on three analysis modules. 
+The full radiometric normalization workflow is contained within normalize.py. It calls on three analysis modules. 
 
 1. Time stack analysis (time_stack.py)
 2. Pseudo-invariant feature generation (pif.py)
@@ -30,9 +30,9 @@ This module analyses the set of images and creates a single output image that re
 * The image contains data derived from the set of input images
 * The datatype is always uint16
 
-## Pseudo invariant feature generation - pif.py ##
+## Pseudo-invariant feature generation - pif.py ##
 
-The time stack image is analysed for pixels that are stable over time. 
+The time stack image is analysed for pixels that are stable over time.
 
 ### Input ###
 * A time stack image and a satellite image of the same geographic location as the time stack image.
@@ -42,16 +42,16 @@ The time stack image is analysed for pixels that are stable over time.
 * Filtering out pixels with no data values: This method simply filters out all pixels that have no data (as indicated by a 0 in the alpha mask at that pixel location)
 
 ### Output ###
-* A list of data on pixel pairs: 
+* A list of data on pixel pairs:
 * The data on each pixel pair consists of:
 	* coordinates (int, int): Indicates the row and col entry this pixel pair refers to
-    * weighting (float): Indicates how strong this pixel location is as an pseudo invariant feature
-    * reference (list of numbers): A list of the intensity value of the time stack image at each band at this pixel location
+	* weighting (float): Indicates how strong this pixel location is as an pseudo invariant feature
+	* reference (list of numbers): A list of the intensity value of the time stack image at each band at this pixel location
 	* candidate (list of numbers): A list of the intensity value of the satellite image at each band at this pixel location
 
 ## Radiometric transformation - transformation.py ##
 
-Use the pseudo invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference time stack.
+Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference time stack.
 
 ### Input ###
 * A list of data on each pixel pair
@@ -66,7 +66,7 @@ Use the pseudo invariant features to derive a transformation that will change th
 This module is intended for functions that can score how well the algorithm is working. This will be useful for regression testing. 
 
 ### Input ###
-* Paths to two images
+* Two GImages
 
 ### Algorithm ###
 * RMSE: Calculate the root mean squared difference between the two images, this will be taken as the score.
