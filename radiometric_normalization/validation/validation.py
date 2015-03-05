@@ -4,10 +4,17 @@ import numpy
 from radiometric_normalization import gimage
 
 
-def get_score(image_path1, image_path2):
+def get_score(image_path1, image_path2, method='rmse'):
+    '''
+    support method configuration
+    '''
     image1 = gimage.load(image_path1)
     image2 = gimage.load(image_path2)
-    score = sum_of_rmse(image1, image2)
+
+    if method == 'rmse':
+        score = sum_of_rmse(image1, image2)
+    else:
+        raise Exception("Unrecognized method specified: {}".format(method))
     return score
 
 
