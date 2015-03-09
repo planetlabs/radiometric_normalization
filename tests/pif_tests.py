@@ -16,15 +16,15 @@ limitations under the License.
 import unittest
 import numpy
 
-from radiometric_normalization import pif
+from radiometric_normalization import gimage, pif
 
 
 class Tests(unittest.TestCase):
-    def test_create_pif_dict(self):
+    def test__filter_nodata_pifs(self):
         nodata = 2 ** 15 - 1
 
         # Three bands of 2 by 2 pixels
-        time_stack = numpy.array([numpy.array([[nodata, 1],
+        r_bands = numpy.array([numpy.array([[nodata, 1],
                                                [nodata, 2]],
                                               dtype='uint16'),
                                   numpy.array([[nodata, 7],
@@ -33,11 +33,12 @@ class Tests(unittest.TestCase):
                                   numpy.array([[2, 9],
                                                [nodata, 1]],
                                               dtype='uint16')])
-        weighting = numpy.array([[0, 65535],
+        r_mask = numpy.array([[0, 65535],
                                  [0, 65535]],
                                 dtype='uint16')
+        reference = gimage.GImage(r_bands, r_mask, {})
 
-        candidate = numpy.array([numpy.array([[8, 6],
+        c_bands = numpy.array([numpy.array([[8, 6],
                                               [nodata, 7]],
                                              dtype='uint16'),
                                  numpy.array([[9, 1],
@@ -46,9 +47,10 @@ class Tests(unittest.TestCase):
                                  numpy.array([[3, 3],
                                               [nodata, 1]],
                                              dtype='uint16')])
-        candidate_mask = numpy.array([[65535, 65535],
+        c_mask = numpy.array([[65535, 65535],
                                       [0, 65535]],
                                      dtype='uint16')
+        candidate = gimage.GImage(c_bands, c_mask, {})
 
         golden_output_list = [{'coordinates': (0, 1),
                                'weighting': 65535,
@@ -59,8 +61,7 @@ class Tests(unittest.TestCase):
                                'reference': numpy.array([2, 6, 1]),
                                'candidate': numpy.array([7, 4, 1])}]
 
-        output_list = pif._filter_nodata(time_stack, weighting,
-                                         candidate, candidate_mask)
+        output_list = pif._filter_nodata_pifs(reference, candidate)
 
         for pixel in range(len(output_list)):
             self.assertEqual(output_list[pixel]['coordinates'],
