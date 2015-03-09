@@ -62,13 +62,13 @@ class Tests(unittest.TestCase):
 
     def test_create_ds(self):
         output_file = 'test_create_ds.tif'
-
-        test_gimage = gimage.GImage([self.band], self.mask, self.metadata)
+        test_band = numpy.array([[0, 1, 2], [2, 3, 4]], dtype=numpy.uint16)
+        test_gimage = gimage.GImage([test_band], self.mask, self.metadata)
         test_ds = gimage.create_ds(test_gimage, output_file)
 
         self.assertEqual(test_ds.RasterCount, 2)
-        self.assertEqual(test_ds.RasterXSize, self.band.shape[0])
-        self.assertEqual(test_ds.RasterYSize, self.band.shape[1])
+        self.assertEqual(test_ds.RasterXSize, 3)
+        self.assertEqual(test_ds.RasterYSize, 2)
 
         os.unlink(output_file)
 

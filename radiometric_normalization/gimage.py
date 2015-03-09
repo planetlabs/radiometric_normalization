@@ -50,8 +50,8 @@ def create_ds(gimage, filename):
 
 def save_to_ds(gimage, gdal_ds):
     assert gdal_ds.RasterCount == len(gimage.bands) + 1
-    assert gdal_ds.RasterXSize == gimage.bands[0].shape[0]
-    assert gdal_ds.RasterYSize == gimage.bands[0].shape[1]
+    assert gdal_ds.RasterXSize == gimage.bands[0].shape[1]
+    assert gdal_ds.RasterYSize == gimage.bands[0].shape[0]
 
     for i, band in enumerate(gimage.bands):
         gdal_array.BandWriteArray(
