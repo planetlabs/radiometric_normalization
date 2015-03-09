@@ -15,9 +15,6 @@ limitations under the License.
 '''
 import unittest
 import numpy
-import os
-
-from osgeo import gdal
 
 from radiometric_normalization import time_stack
 
@@ -111,26 +108,6 @@ class Tests(unittest.TestCase):
             self.assertEqual(output_bands[band].all(),
                              golden_output[band].all())
         self.assertEqual(mask.all(), golden_mask.all())
-
-    def test_write_out_bands(self):
-        # An image with eight bands of 102 by 99 pixels
-        # and an alpha band
-        image = numpy.random.randint(
-            2 ** 15, size=(8, 102, 99)).astype('uint16')
-        mask = numpy.ones((102, 99), dtype='uint16')
-        output_path = 'test.tif'
-        output_nodata = 0
-        time_stack._write_out_bands(image, mask,
-                                    output_path, output_nodata)
-
-        # Check it
-        image_ds = gdal.Open('test.tif')
-        self.assertEqual(image_ds.RasterCount, 9)
-        self.assertEqual(image_ds.RasterXSize, 99)
-        self.assertEqual(image_ds.RasterYSize, 102)
-        self.assertEqual(image_ds.GetRasterBand(1).GetNoDataValue(), 0)
-
-        os.unlink('test.tif')
 
 
 if __name__ == '__main__':

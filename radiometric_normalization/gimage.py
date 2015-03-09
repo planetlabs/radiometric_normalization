@@ -27,9 +27,9 @@ from osgeo import gdal, gdal_array
 GImage = namedtuple('GImage', 'bands, alpha, metadata')
 
 
-def save(gimage, filename):
+def save(gimage, filename, nodata=None):
     gdal_ds = create_ds(gimage, filename)
-    save_to_ds(gimage, gdal_ds)
+    save_to_ds(gimage, gdal_ds, nodata)
 
 
 def create_ds(gimage, filename):
@@ -48,7 +48,7 @@ def create_ds(gimage, filename):
     return gdal_ds
 
 
-def save_to_ds(gimage, gdal_ds):
+def save_to_ds(gimage, gdal_ds, nodata=None):
     assert gdal_ds.RasterCount == len(gimage.bands) + 1
     assert gdal_ds.RasterXSize == gimage.bands[0].shape[1]
     assert gdal_ds.RasterYSize == gimage.bands[0].shape[0]
@@ -56,6 +56,8 @@ def save_to_ds(gimage, gdal_ds):
     for i, band in enumerate(gimage.bands):
         gdal_array.BandWriteArray(
             gdal_ds.GetRasterBand(i + 1), band)
+        if nodata is not None:
+            gdal_ds.GetRasterBand(i + 1).SetNoDataValue(nodata)
 
     alpha_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     gdal_array.BandWriteArray(alpha_band, gimage.alpha)

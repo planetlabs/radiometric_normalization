@@ -20,7 +20,9 @@ limitations under the License.
 import numpy
 import logging
 
-from osgeo import gdal, gdal_array
+from osgeo import gdal
+
+from radiometric_normalization import gimage
 
 
 def generate(image_paths, output_path, method='identity'):
@@ -52,7 +54,9 @@ def generate(image_paths, output_path, method='identity'):
     if method is 'identity':
         output_bands, mask = _mean_with_uniform_weight(
             all_bands, output_nodata, output_datatype)
-    _write_out_bands(output_bands, mask, output_path, output_nodata)
+
+    output_gimage = gimage.GImage(output_bands, mask, {})
+    gimage.save(output_gimage, output_path, nodata=output_nodata)
 
     return output_path
 
@@ -175,40 +179,3 @@ def _mean_with_uniform_weight(all_bands, output_nodata, output_datatype):
         numpy.iinfo(output_datatype).max
 
     return output_bands, output_mask
-
-
-def _write_out_bands(output_bands, mask,
-                     output_path, output_nodata):
-    ''' Writes out the time stack to a GeoTIFF
-
-    Input:
-        output_bands (list of arrays of numbers): A list of arrays, each
-            representing one band of the time stack
-        mask (array of numbers): An array representing the weight of the
-            time stack
-        output_path (str): The path to save the image at
-        output_nodata (number): The no data value for the output image
-    '''
-
-    no_bands = len(output_bands)
-    rows, cols = output_bands[0].shape
-
-    # Set up output file
-    options = ['ALPHA=YES']
-    datatype = gdal_array.NumericTypeCodeToGDALTypeCode(
-        output_bands[0].dtype.type)
-    gdal_ds = gdal.GetDriverByName('GTIFF').Create(
-        output_path, cols, rows, no_bands + 1, datatype,
-        options=options)
-
-    # Write output file data
-    for i in range(no_bands):
-        gdal_array.BandWriteArray(
-            gdal_ds.GetRasterBand(i + 1),
-            output_bands[i])
-    gdal_ds.GetRasterBand(1).SetNoDataValue(output_nodata)
-
-    # Set the alpha band
-    alpha_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
-    gdal_array.BandWriteArray(alpha_band, mask)
-    logging.info('Successfully wrote output file as: ' + output_path)

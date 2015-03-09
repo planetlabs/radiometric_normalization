@@ -82,11 +82,12 @@ class Tests(unittest.TestCase):
     def test_save_to_ds(self):
         output_file = 'test_save_to_ds.tif'
 
-        test_gimage = gimage.GImage([self.band], self.mask, self.metadata)
+        test_band = numpy.array([[0, 1], [2, 3]], dtype=numpy.uint16)
+        test_gimage = gimage.GImage([test_band], self.mask, self.metadata)
         output_ds = gdal.GetDriverByName('GTiff').Create(
             output_file, 2, 2, 2, gdal.GDT_UInt16,
             options=['ALPHA=YES'])
-        gimage.save_to_ds(test_gimage, output_ds)
+        gimage.save_to_ds(test_gimage, output_ds, nodata=3)
 
         # Required for gdal to write to file
         output_ds = None
@@ -98,6 +99,9 @@ class Tests(unittest.TestCase):
 
         saved_band = test_ds.GetRasterBand(1).ReadAsArray()
         numpy.testing.assert_array_equal(saved_band, self.band)
+
+        saved_nodata = test_ds.GetRasterBand(1).GetNoDataValue()
+        self.assertEqual(saved_nodata, 3)
 
         saved_alpha = test_ds.GetRasterBand(2).ReadAsArray()
         numpy.testing.assert_array_equal(saved_alpha, self.mask)
