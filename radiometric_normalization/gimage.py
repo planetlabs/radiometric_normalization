@@ -69,7 +69,7 @@ def save_to_ds(gimage, gdal_ds):
         gdal_ds.SetMetadata(gimage.metadata['rpc'], 'RPC')
 
 
-def load(filename):
+def load(filename, nodata=None):
     gdal_ds = gdal.Open(filename)
     if gdal_ds is None:
         raise Exception('Unable to open file "{}" with gdal.Open()'.format(
@@ -78,6 +78,9 @@ def load(filename):
     alpha, band_count = _read_alpha_and_band_count(gdal_ds)
     bands = _read_bands(gdal_ds, band_count)
     metadata = _read_metadata(gdal_ds)
+
+    if nodata:
+        alpha = alpha * _nodata_to_mask(bands, nodata)
     return GImage(bands, alpha, metadata)
 
 
@@ -128,3 +131,10 @@ def _read_alpha_and_band_count(gdal_ds):
             dtype=numpy.uint16)
         band_count = gdal_ds.RasterCount
     return alpha, band_count
+
+
+def _nodata_to_mask(bands, nodata):
+    alpha = numpy.ones(bands[0].shape, dtype=numpy.uint16)
+    for band in bands:
+        alpha[band == nodata] = 0
+    return alpha

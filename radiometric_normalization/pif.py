@@ -33,8 +33,20 @@ def generate(candidate_path, reference_path, method='identity'):
              'reference', list of numbers,
              'candidate', list of numbers}
     '''
+    reference_img, candidate_img = _load_gimages(
+        reference_path, candidate_path)
+
+    if method is 'identity':
+        pixel_pairs = _filter_zero_alpha_pifs(reference_img, candidate_img)
+    else:
+        raise NotImplementedError("Only 'identity' method is implemented.")
+
+    return pixel_pairs
+
+
+def _load_gimages(reference_path, candidate_path):
     reference_img = gimage.load(reference_path)
-    candidate_img = gimage.load(reference_path)
+    candidate_img = gimage.load(candidate_path)
 
     assert len(reference_img.bands) == len(candidate_img.bands), \
         '{} and {} have different number of bands'.format(
@@ -42,31 +54,30 @@ def generate(candidate_path, reference_path, method='identity'):
     assert reference_img.bands[0].shape == reference_img.bands[0].shape, \
         '{} and {} have different shapes'.format(
             candidate_path, reference_path)
-
-    if method is 'identity':
-        pixel_pairs = _filter_nodata_pifs(reference_img, candidate_img)
-    else:
-        raise NotImplementedError("Only 'identity' method is implemented.")
-
-    return pixel_pairs
+    return (reference_img, candidate_img)
 
 
-def _filter_nodata_pifs(reference_gimage, candidate_gimage):
+def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
     ''' Creates the pseudo-invariant features from the reference and candidate
-    gimages by filtering out nodata pixels'''
+    gimages by filtering out pixels where either the candidate or mask alpha
+    value is zero (masked)'''
     all_mask = numpy.logical_not(numpy.logical_or(
         reference_gimage.alpha == 0, candidate_gimage.alpha == 0))
 
     valid_pixels = numpy.nonzero(all_mask)
 
+    def per_band_values(gimg, row, col):
+        return [band[row, col] for band in gimg.bands]
+
     pixel_pairs = []
     for pixel in range(len(valid_pixels[0])):
         row = valid_pixels[0][pixel]
         col = valid_pixels[1][pixel]
-        pixel_dict = {'coordinates': (row, col),
-                      'weighting': reference_gimage.alpha[row, col],
-                      'reference': reference_gimage.bands[:, row, col],
-                      'candidate': candidate_gimage.bands[:, row, col]}
+        pixel_dict = {
+            'coordinates': (row, col),
+            'weighting': reference_gimage.alpha[row, col],
+            'reference': per_band_values(reference_gimage, row, col),
+            'candidate': per_band_values(candidate_gimage, row, col)}
         pixel_pairs.append(pixel_dict)
 
     return pixel_pairs

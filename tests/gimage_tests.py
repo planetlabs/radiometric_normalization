@@ -41,6 +41,13 @@ class Tests(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.test_photometric_alpha_image)
 
+    def test__nodata_to_mask(self):
+        test_band = numpy.array([[0, 1, 2], [1, 2, 3]], dtype=numpy.uint16)
+        test_mask = gimage._nodata_to_mask([test_band], 3)
+
+        expected_mask = numpy.array([[1, 1, 1], [1, 1, 0]], dtype=numpy.uint16)
+        numpy.testing.assert_array_equal(test_mask, expected_mask)
+
     def test__read_metadata(self):
         gdal_ds = gdal.Open(self.test_photometric_alpha_image)
         test_metadata = gimage._read_metadata(gdal_ds)
