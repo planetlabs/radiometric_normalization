@@ -60,11 +60,29 @@ class Tests(unittest.TestCase):
         self.assertEqual(band_count, 3)
         numpy.testing.assert_array_equal(alpha, self.mask)
 
-    def test_save(self):
-        output_file = 'test_file.tif'
+    def test_create_ds(self):
+        output_file = 'test_create_ds.tif'
 
         test_gimage = gimage.GImage([self.band], self.mask, self.metadata)
-        gimage.save(test_gimage, output_file)
+        test_ds = gimage.create_ds(test_gimage, output_file)
+
+        self.assertEqual(test_ds.RasterCount, 2)
+        self.assertEqual(test_ds.RasterXSize, self.band.shape[0])
+        self.assertEqual(test_ds.RasterYSize, self.band.shape[1])
+
+        os.unlink(output_file)
+
+    def test_save_to_ds(self):
+        output_file = 'test_save_to_ds.tif'
+
+        test_gimage = gimage.GImage([self.band], self.mask, self.metadata)
+        output_ds = gdal.GetDriverByName('GTiff').Create(
+            output_file, 2, 2, 2, gdal.GDT_UInt16,
+            options=['ALPHA=YES'])
+        gimage.save_to_ds(test_gimage, output_ds)
+
+        # Required for gdal to write to file
+        output_ds = None
 
         test_ds = gdal.Open(output_file)
 

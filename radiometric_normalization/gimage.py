@@ -28,24 +28,34 @@ GImage = namedtuple('GImage', 'bands, alpha, metadata')
 
 
 def save(gimage, filename):
+    gdal_ds = create_ds(gimage, filename)
+    save_to_ds(gimage, gdal_ds)
 
+
+def create_ds(gimage, filename):
+    # Alpha is saved as the last band
     band_count = len(gimage.bands) + 1
     options = ['ALPHA=YES']
 
     if band_count == 4:
         options.append('PHOTOMETRIC=RGB')
 
-    datatype = gdal_array.NumericTypeCodeToGDALTypeCode(
-        gimage.bands[0].dtype.type)
+    datatype = gdal.GDT_UInt16
     ysize, xsize = gimage.bands[0].shape
     gdal_ds = gdal.GetDriverByName('GTIFF').Create(
         filename, xsize, ysize, band_count, datatype,
         options=options)
+    return gdal_ds
 
-    for i in range(len(gimage.bands)):
+
+def save_to_ds(gimage, gdal_ds):
+    assert gdal_ds.RasterCount == len(gimage.bands) + 1
+    assert gdal_ds.RasterXSize == gimage.bands[0].shape[0]
+    assert gdal_ds.RasterYSize == gimage.bands[0].shape[1]
+
+    for i, band in enumerate(gimage.bands):
         gdal_array.BandWriteArray(
-            gdal_ds.GetRasterBand(i + 1),
-            gimage.bands[i])
+            gdal_ds.GetRasterBand(i + 1), band)
 
     alpha_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     gdal_array.BandWriteArray(alpha_band, gimage.alpha)
