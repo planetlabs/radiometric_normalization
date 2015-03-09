@@ -23,14 +23,14 @@ import logging
 from osgeo import gdal, gdal_array
 
 
-def generate(image_paths, method='identity', output_path='time_stack.tif'):
-    ''' This takes a list of image paths and creates a time stack image.
+def generate(image_paths, output_path, method='identity'):
+    '''Synthesizes a time stack image set into a single reference image.
 
-    It assumes that all images
+    All images in time stack must:
         - contain the same number of bands
-        - the bands are in the same band order
-        - all the images are of the same size
-        - all the images have the same nodata value
+        - have the same band order
+        - have the same size
+        - have the same nodata value
 
     The output file is only supposed to be used internally so options to change
     the nodata value and the datatype are not exposed.
@@ -40,8 +40,8 @@ def generate(image_paths, method='identity', output_path='time_stack.tif'):
         geographic information isn't carried over to the output file.
 
     Input:
-        image_paths (list of str): A list of the input file paths
-        method (str): Time stack creation method [identity]
+        image_paths (list of str): A list of paths for input time stack images
+        method (str): Time stack analysis method [identity]
         output_path (str): A path to write the file to
     '''
 
@@ -71,7 +71,7 @@ def _read_in_bands(image_paths):
     '''
 
     all_images, nodata = _read_in_gdal_images(image_paths)
-    all_bands = _organise_images_to_bands(all_images, nodata)
+    all_bands = _organize_images_to_bands(all_images, nodata)
 
     return all_bands
 
@@ -102,22 +102,22 @@ def _read_in_gdal_images(image_paths):
 
         logging.info('Processing ' + image_path + '...')
         assert image_ds.RasterCount == no_bands, \
-            '%s has a different number of bands' % image_path
+            '{} has a different number of bands'.format(image_path)
         assert image_ds.RasterXSize == cols and image_ds.RasterYSize == rows, \
-            '%s has a different size' % image_path
+            '{} has a different size'.format(image_path)
         assert image_ds.GetRasterBand(1).GetNoDataValue() == nodata, \
-            '%s has a different nodata value' % image_path
+            '{} has a different nodata value'.format(image_path)
         alpha_band = image_ds.GetRasterBand(image_ds.RasterCount)
         assert alpha_band.GetColorInterpretation() != gdal.GCI_AlphaBand, \
-            '%s has an alpha band' % image_path
+            '{} has an alpha band'.format(image_path)
 
         all_images.append(image_ds.ReadAsArray())
 
     return all_images, nodata
 
 
-def _organise_images_to_bands(all_images, nodata):
-    ''' Organises the arrays of images by band
+def _organize_images_to_bands(all_images, nodata):
+    ''' Organizes the arrays of images by band
 
     Input:
         all_images (list of arrays of numbers): A list of each image,
@@ -130,19 +130,19 @@ def _organise_images_to_bands(all_images, nodata):
     '''
 
     no_images = len(all_images)
-    no_bands, _, _ = all_images[0].shape
+    no_bands = all_images[0].shape[0]
     all_bands = []
     for band in range(no_bands):
         one_band = \
-            [numpy.ma.masked_equal(all_images[image][band, :, :], nodata)
-             for image in range(no_images)]
+            [numpy.ma.masked_equal(all_images[i][band, :, :], nodata)
+             for i in range(no_images)]
         all_bands.append(one_band)
 
     return all_bands
 
 
 def _mean_with_uniform_weight(all_bands, output_nodata, output_datatype):
-    ''' Calculates the time stack from a list of the bands
+    ''' Calculates the reference from a list of the bands
 
     Input:
         all_bands (list of list of arrays): A list of each band,

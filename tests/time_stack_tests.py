@@ -23,7 +23,7 @@ from radiometric_normalization import time_stack
 
 
 class Tests(unittest.TestCase):
-    def test_organise_images_to_bands(self):
+    def test_organize_images_to_bands(self):
         # Seven images of five bands of 10 by 11 pixels
         all_images = []
         nodata = 2 ** 15 - 1
@@ -32,7 +32,7 @@ class Tests(unittest.TestCase):
                 2 ** 15, size=(5, 10, 11)).astype('uint16')
             all_images.append(image)
 
-        all_bands = time_stack._organise_images_to_bands(all_images, nodata)
+        all_bands = time_stack._organize_images_to_bands(all_images, nodata)
         no_bands = len(all_bands)
         no_images = len(all_bands[0])
         rows, cols = all_bands[0][0].shape

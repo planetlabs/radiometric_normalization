@@ -25,10 +25,12 @@ def generate_luts(candidate_path, reference_paths, config=None):
                   'pif_method': 'identity',
                   'transformation_method': 'linear_relationship'}
 
-    time_stack_image = time_stack.generate(reference_paths,
-                                           method=config['time_stack_method'])
+    reference_image = time_stack.generate(
+        reference_paths,
+        method=config['time_stack_method'])
+
     pifs = pif.generate(candidate_path,
-                        time_stack_path=time_stack_image,
+                        reference_path=reference_image,
                         method=config['pif_method'])
     transformations = transformation.generate(
         pifs, method=config['transformation_method'])
