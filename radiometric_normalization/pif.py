@@ -36,7 +36,7 @@ def generate(candidate_path, reference_path, method='identity'):
     reference_img, candidate_img = _load_gimages(
         reference_path, candidate_path)
 
-    if method is 'identity':
+    if method == 'identity':
         pixel_pairs = _filter_zero_alpha_pifs(reference_img, candidate_img)
     else:
         raise NotImplementedError("Only 'identity' method is implemented.")

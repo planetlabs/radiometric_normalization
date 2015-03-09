@@ -46,7 +46,7 @@ class Tests(unittest.TestCase):
 
         test_output_list = pif._filter_zero_alpha_pifs(reference, candidate)
         self.assertEqual(len(test_output_list), 2)
-        assert 1 == 2
+
         for test_pif, golden_pif in zip(test_output_list, golden_output_list):
             self.assertEqual(test_pif['coordinates'],
                              golden_pif['coordinates'])
