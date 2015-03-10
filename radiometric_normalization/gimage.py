@@ -71,7 +71,17 @@ def save_to_ds(gimage, gdal_ds, nodata=None):
         gdal_ds.SetMetadata(gimage.metadata['rpc'], 'RPC')
 
 
+def load_candidate(filename):
+    tmp_img = load(filename)
+
+    logging.debug("Candidate image: moving last band to alpha band.")
+    bands = tmp_img.bands[:-1]
+    alpha = tmp_img.bands[-1]
+    return GImage(bands, alpha, tmp_img.metadata)
+
+
 def load(filename, nodata=None):
+    logging.debug("Loading {} as GImage.".format(filename))
     gdal_ds = gdal.Open(filename)
     if gdal_ds is None:
         raise Exception('Unable to open file "{}" with gdal.Open()'.format(
@@ -123,9 +133,12 @@ def _read_bands(gdal_ds, band_count):
 
 
 def _read_alpha_and_band_count(gdal_ds):
+    logging.debug("Loading alpha. Initial band count: {}".format(
+        gdal_ds.RasterCount))
     last_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     if last_band.GetColorInterpretation() == gdal.GCI_AlphaBand:
         alpha = last_band.ReadAsArray()
+        logging.debug("Alpha band found, reducing band count")
         band_count = gdal_ds.RasterCount - 1
     else:
         alpha = 65535 * numpy.ones(

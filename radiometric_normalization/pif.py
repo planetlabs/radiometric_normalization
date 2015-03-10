@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
+import logging
 import numpy
 
 from radiometric_normalization import gimage
@@ -46,11 +47,12 @@ def generate(candidate_path, reference_path, method='identity'):
 
 def _load_gimages(reference_path, candidate_path):
     reference_img = gimage.load(reference_path)
-    candidate_img = gimage.load(candidate_path)
+    candidate_img = gimage.load_candidate(candidate_path)
 
     assert len(reference_img.bands) == len(candidate_img.bands), \
-        '{} and {} have different number of bands'.format(
-            candidate_path, reference_path)
+        '{} and {} have different number of bands: {} / {}'.format(
+            candidate_path, reference_path,
+            len(candidate_img.bands), len(reference_img.bands))
     assert reference_img.bands[0].shape == reference_img.bands[0].shape, \
         '{} and {} have different shapes'.format(
             candidate_path, reference_path)
@@ -69,8 +71,15 @@ def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
     def per_band_values(gimg, row, col):
         return [band[row, col] for band in gimg.bands]
 
+    no_total_pixels = reference_gimage.bands[0].shape[0] * \
+        reference_gimage.bands[0].shape[1]
+    no_valid_pixels = len(valid_pixels[0])
+    valid_percent = 100 * no_valid_pixels / no_total_pixels
+    logging.info('Found {} pifs out of {} pixels ({}%)'.format(
+        no_valid_pixels, no_total_pixels, valid_percent))
+
     pixel_pairs = []
-    for pixel in range(len(valid_pixels[0])):
+    for pixel in range(no_valid_pixels):
         row = valid_pixels[0][pixel]
         col = valid_pixels[1][pixel]
         pixel_dict = {

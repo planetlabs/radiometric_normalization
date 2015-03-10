@@ -60,8 +60,6 @@ def generate(image_paths, output_path, method='identity'):
     output_gimage = gimage.GImage(output_bands, mask, {})
     gimage.save(output_gimage, output_path, nodata=output_nodata)
 
-    return output_path
-
 
 def _read_in_bands(image_paths):
     ''' Reads in a list of image paths and outputs a list of numpy arrays
