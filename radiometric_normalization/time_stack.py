@@ -51,9 +51,11 @@ def generate(image_paths, output_path, method='identity'):
     output_datatype = numpy.uint16
 
     all_bands = _read_in_bands(image_paths)
-    if method is 'identity':
+    if method == 'identity':
         output_bands, mask = _mean_with_uniform_weight(
             all_bands, output_nodata, output_datatype)
+    else:
+        raise NotImplementedError("Only 'identity' method is implemented")
 
     output_gimage = gimage.GImage(output_bands, mask, {})
     gimage.save(output_gimage, output_path, nodata=output_nodata)
@@ -136,9 +138,9 @@ def _organize_images_to_bands(all_images, nodata):
     no_images = len(all_images)
     no_bands = all_images[0].shape[0]
     all_bands = []
-    for band in range(no_bands):
+    for band_index in range(no_bands):
         one_band = \
-            [numpy.ma.masked_equal(all_images[i][band, :, :], nodata)
+            [numpy.ma.masked_equal(all_images[i][band_index, :, :], nodata)
              for i in range(no_images)]
         all_bands.append(one_band)
 
@@ -146,7 +148,8 @@ def _organize_images_to_bands(all_images, nodata):
 
 
 def _mean_with_uniform_weight(all_bands, output_nodata, output_datatype):
-    ''' Calculates the reference from a list of the bands
+    ''' Calculates the reference as the mean of each band with uniform
+    weighting (zero for nodata pixels, 2 ** 16 - 1 for valid pixels)
 
     Input:
         all_bands (list of list of arrays): A list of each band,
