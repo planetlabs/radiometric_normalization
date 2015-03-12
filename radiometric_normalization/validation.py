@@ -13,3 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
+import logging
+import numpy
+
+
+def sum_of_rmse(image1, image2):
+    assert len(image1.bands) == len(image2.bands)
+
+    def rmse(band1, band2, mask1, mask2):
+        b1 = numpy.ma.array(band1, mask=mask1)
+        b2 = numpy.ma.array(band2, mask=mask2)
+        return numpy.sqrt(numpy.mean((b1 - b2) ** 2))
+
+    rmses = [rmse(band1, band2, image1.alpha, image2.alpha)
+             for (band1, band2) in zip(image1.bands, image2.bands)]
+
+    logging.info("Root mean square errors: {}".format(rmses))
+    return sum(rmses)
