@@ -20,12 +20,10 @@ limitations under the License.
 import numpy
 import logging
 
-from osgeo import gdal
-
 from radiometric_normalization import gimage
 
 
-def generate(image_paths, output_path, method='identity'):
+def generate(image_paths, output_path, method='identity', image_nodata=None):
     '''Synthesizes a time stack image set into a single reference image.
 
     All images in time stack must:
@@ -47,21 +45,19 @@ def generate(image_paths, output_path, method='identity'):
         output_path (str): A path to write the file to
     '''
 
-    output_nodata = 2 ** 15 - 1
     output_datatype = numpy.uint16
 
-    all_bands = _read_in_bands(image_paths)
+    all_gimages = _load_all_gimages(image_paths, image_nodata)
     if method == 'identity':
-        output_bands, mask = _mean_with_uniform_weight(
-            all_bands, output_nodata, output_datatype)
+        output_gimage = _mean_with_uniform_weight(
+            all_gimages, output_datatype)
     else:
         raise NotImplementedError("Only 'identity' method is implemented")
 
-    output_gimage = gimage.GImage(output_bands, mask, {})
-    gimage.save(output_gimage, output_path, nodata=output_nodata)
+    gimage.save(output_gimage, output_path)
 
 
-def _load_all_gimages(image_paths):
+def _load_all_gimages(image_paths, image_nodata):
     ''' Reads in a list of image paths and outputs a list of numpy arrays
     representing the bands.
 
@@ -69,14 +65,14 @@ def _load_all_gimages(image_paths):
         image_paths (list of str): A list of the input file paths
 
     Output:
-        all_images (list of gimages): A list of all the images loaded into
+        all_gimages (list of gimages): A list of all the images loaded into
             memory as gimages
     '''
 
-    test_gimage = gimage.load(image_paths.pop(0))
+    test_gimage = gimage.load(image_paths.pop(0), image_nodata)
     all_gimages = [test_gimage]
     for image_path in image_paths:
-        current_gimage = gimage.load(image_path)
+        current_gimage = gimage.load(image_path, image_nodata)
         assert len(current_gimage.bands) == len(test_gimage.bands), \
             '{} and {} have different number of bands: {} / {}'.format(
                 image_path, image_paths[0],
@@ -84,96 +80,66 @@ def _load_all_gimages(image_paths):
         assert current_gimage.bands[0].shape == test_gimage.bands[0].shape, \
             '{} and {} have different shapes'.format(
                 image_path, image_paths[0])
+        assert current_gimage.metadata == test_gimage.metadata, \
+            '{} and {} have different geographic metadata'.format(
+                image_path, image_paths[0])
         all_gimages.append(current_gimage)
 
     return all_gimages
 
 
-def _read_in_bands(image_paths):
-    ''' Reads in a list of image paths and outputs a list of numpy arrays
-    representing the bands.
+def _mean_one_band(all_gimages, band_index, output_datatype):
+    ''' Calculates the reference as the mean of each band with uniform
+    weighting (zero for nodata pixels, 2 ** 16 - 1 for valid pixels)
 
     Input:
-        image_paths (list of str): A list of the input file paths
+        all_gimages (list of gimages): A list of all the gimage
+        band_index (int): Which band of the gimage to operate on
+        output_datatype (numpy datatype): Data type for the output image
 
     Output:
-        all_bands (list of list of arrays): A list of each band,
-            each band consisting of a list of images each entry being a
-            masked array of the image data
+        band_mean (numpy array): Output array representing the mean for
+            the specified
+        band_mask (numpy binary array): Mask representing the no data
+            values for this band (0 is a no data pixel, 1 is an active pixel)
     '''
 
-    all_images, nodata = _read_in_gdal_images(image_paths)
-    all_bands = _organize_images_to_bands(all_images, nodata)
+    no_images = len(all_gimages)
+    one_band = \
+        [numpy.ma.masked_array(all_gimages[i].bands[band_index],
+                               all_gimages[i].alpha == 0)
+         for i in range(no_images)]
 
-    return all_bands
+    masked_mean = numpy.ma.mean(one_band, axis=0)
+    band_mean = masked_mean.data.astype(output_datatype)
+    band_mask = numpy.logical_not(masked_mean.mask)
+
+    return band_mean, band_mask
 
 
-def _read_in_gdal_images(image_paths):
-    ''' Uses GDAL to read in the image as a numpy array and check them.
+def _uniform_weight_alpha(all_masks, output_datatype):
+    '''Uses the gimages.mask entry to make a cumulative mask
+    of all the gimages in the list
 
     Input:
-        image_paths (list of str): A list of the input file paths
+        all_gimages (list of gimages): The list of gimages to
+            find the cumulative mask of.
 
     Output:
-        all_images (list of arrays of numbers): A list of each image,
-            each image consisting of a stacked array of the bands
-        nodata (number): The nodata value for this raster set
+        output_alpha (numpy uint16 array): The output mask.
     '''
 
-    # Find some constants
-    test_image_ds = gdal.Open(image_paths[0])
-    no_bands = test_image_ds.RasterCount
-    cols = test_image_ds.RasterXSize
-    rows = test_image_ds.RasterYSize
-    nodata = test_image_ds.GetRasterBand(1).GetNoDataValue()
+    output_alpha = numpy.ones(all_masks[0].shape)
+    for mask in all_masks:
+        output_alpha[numpy.nonzero(mask == 0)] = 0
 
-    # Read in each image as a numpy array
-    all_images = []
-    for image_path in image_paths:
-        image_ds = gdal.Open(image_path)
+    output_alpha = output_alpha.astype(output_datatype) * \
+        numpy.iinfo(output_datatype).max
 
-        logging.info('Processing ' + image_path + '...')
-        assert image_ds.RasterCount == no_bands, \
-            '{} has a different number of bands'.format(image_path)
-        assert image_ds.RasterXSize == cols and image_ds.RasterYSize == rows, \
-            '{} has a different size'.format(image_path)
-        assert image_ds.GetRasterBand(1).GetNoDataValue() == nodata, \
-            '{} has a different nodata value'.format(image_path)
-        alpha_band = image_ds.GetRasterBand(image_ds.RasterCount)
-        assert alpha_band.GetColorInterpretation() != gdal.GCI_AlphaBand, \
-            '{} has an alpha band'.format(image_path)
-
-        all_images.append(image_ds.ReadAsArray())
-
-    return all_images, nodata
+    return output_alpha
 
 
-def _organize_images_to_bands(all_images, nodata):
-    ''' Organizes the arrays of images by band
-
-    Input:
-        all_images (list of arrays of numbers): A list of each image,
-            each image consisting of a stacked array of the bands
-
-    Output:
-        all_bands (list of list of arrays): A list of each band,
-            each band consisting of a list of images each entry being a
-            masked array of the image data
-    '''
-
-    no_images = len(all_images)
-    no_bands = all_images[0].shape[0]
-    all_bands = []
-    for band_index in range(no_bands):
-        one_band = \
-            [numpy.ma.masked_equal(all_images[i][band_index, :, :], nodata)
-             for i in range(no_images)]
-        all_bands.append(one_band)
-
-    return all_bands
-
-
-def _mean_with_uniform_weight(all_bands, output_nodata, output_datatype):
+def _mean_with_uniform_weight(all_gimages, output_datatype):
     ''' Calculates the reference as the mean of each band with uniform
     weighting (zero for nodata pixels, 2 ** 16 - 1 for valid pixels)
 
@@ -185,26 +151,24 @@ def _mean_with_uniform_weight(all_bands, output_nodata, output_datatype):
         output_datatype (numpy datatype): Data type for the output image
 
     Output:
-        output_bands (list of arrays of numbers): A list of arrays, each
-            representing one band of the time stack
-        mask (array of numbers): An array representing the weight of the
-            time stack
+        output_gimage (gimage): The mean for each band and the mask in a
+            gimage data format
     '''
 
     logging.info('Time stack analysis is using: Mean with uniform weight.')
 
-    rows, cols = all_bands[0][0].shape
-    all_bands_mask = numpy.zeros((rows, cols))  # 0 for valid; 1 for nodata
-    output_bands = []
-    for band in all_bands:
-        masked_mean = numpy.ma.mean(band, axis=0)
-        band_mean = masked_mean.data
-        band_mask = masked_mean.mask
-        band_mean[numpy.nonzero(band_mask)] = output_nodata
-        all_bands_mask = numpy.logical_or(band_mask, all_bands_mask)
-        output_bands.append(band_mean.astype(output_datatype))
+    no_bands = len(all_gimages[0].bands)
+    all_means = []
+    all_masks = []
+    for band in range(no_bands):
+        band_mean, band_mask = _mean_one_band(
+            all_gimages, band, output_datatype)
+        all_means.append(band_mean)
+        all_masks.append(band_mask)
 
-    output_mask = numpy.logical_not(all_bands_mask).astype(output_datatype) * \
-        numpy.iinfo(output_datatype).max
+    output_alpha = _uniform_weight_alpha(all_masks, output_datatype)
 
-    return output_bands, output_mask
+    output_gimage = gimage.GImage(all_means, output_alpha,
+                                  all_gimages[0].metadata)
+
+    return output_gimage
