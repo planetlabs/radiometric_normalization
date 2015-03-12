@@ -91,7 +91,7 @@ def load(filename, nodata=None):
     bands = _read_bands(gdal_ds, band_count)
     metadata = _read_metadata(gdal_ds)
 
-    if nodata:
+    if nodata is not None:
         alpha = alpha * _nodata_to_mask(bands, nodata)
     return GImage(bands, alpha, metadata)
 
@@ -142,7 +142,7 @@ def _read_alpha_and_band_count(gdal_ds):
         band_count = gdal_ds.RasterCount - 1
     else:
         alpha = 65535 * numpy.ones(
-            (gdal_ds.RasterXSize, gdal_ds.RasterYSize),
+            (gdal_ds.RasterYSize, gdal_ds.RasterXSize),
             dtype=numpy.uint16)
         band_count = gdal_ds.RasterCount
     return alpha, band_count
