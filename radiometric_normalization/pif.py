@@ -13,20 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
-
-''' Creates a list of pseudo invariant features
-'''
+import logging
 import numpy
 
-from osgeo import gdal
+from radiometric_normalization import gimage
 
 
-def generate(candidate_path, time_stack_path='time_stack.tif',
-             method='identity'):
+def generate(candidate_path, reference_path, method='identity'):
     ''' Generates psuedo invariant features as a list of pixel pairs
 
     Input:
-        time_stack_path (str): A path to the time stack image
+        candidate_path (str): Path to the candidate image
+        reference_path (str): Path to the reference image
         method (str): Which psuedo invariant feature generation method to use
 
     Output:
@@ -36,67 +34,59 @@ def generate(candidate_path, time_stack_path='time_stack.tif',
              'reference', list of numbers,
              'candidate', list of numbers}
     '''
-    time_stack_ds = gdal.Open(time_stack_path)
-    no_bands_reference = time_stack_ds.RasterCount
-    time_stack_full = time_stack_ds.ReadAsArray()
-    time_stack_ds.RasterXSize
-    time_stack = time_stack_full[0:no_bands_reference - 1, :, :]
-    weighting = time_stack_full[no_bands_reference - 1, :, :]
+    reference_img, candidate_img = _load_gimages(
+        reference_path, candidate_path)
 
-    candidate_ds = gdal.Open(candidate_path)
-    no_bands_candidate = candidate_ds.RasterCount
-    candidate_full = candidate_ds.ReadAsArray()
-    candidate = candidate_full[0:no_bands_candidate - 1, :, :]
-    candidate_mask = candidate_full[no_bands_candidate - 1, :, :]
-
-    assert no_bands_reference == no_bands_candidate, \
-        '%s and %s have different number of bands' % \
-        (candidate_path, time_stack_path)
-    assert candidate_ds.RasterXSize == time_stack_ds.RasterXSize and \
-        candidate_ds.RasterYSize == time_stack_ds.RasterYSize, \
-        '%s and %s have different sizes' % \
-        (candidate_path, time_stack_path)
-
-    if method is 'identity':
-        pixel_pairs = _filter_nodata(time_stack, weighting,
-                                     candidate, candidate_mask)
+    if method == 'identity':
+        pixel_pairs = _filter_zero_alpha_pifs(reference_img, candidate_img)
+    else:
+        raise NotImplementedError("Only 'identity' method is implemented.")
 
     return pixel_pairs
 
 
-def _filter_nodata(time_stack, weighting, candidate, candidate_mask):
-    ''' Creates the pixel pairs from the time stack.
+def _load_gimages(reference_path, candidate_path):
+    reference_img = gimage.load(reference_path)
+    candidate_img = gimage.load_candidate(candidate_path)
 
-    Input:
-        time_stack (array of numbers): The time stack of shape:
-            (no_bands, rows, cols)
-        weighting (array of numbers): The weightings of the time stack
-            (0 is nodata)
-        time_stack (array of numbers): The candidate image of shape:
-            (no_bands, rows, cols)
-        candidate_mask (array of numbers): The nodata mask of the candidate
-            image (0 is nodata)
+    assert len(reference_img.bands) == len(candidate_img.bands), \
+        '{} and {} have different number of bands: {} / {}'.format(
+            candidate_path, reference_path,
+            len(candidate_img.bands), len(reference_img.bands))
+    assert reference_img.bands[0].shape == reference_img.bands[0].shape, \
+        '{} and {} have different shapes'.format(
+            candidate_path, reference_path)
+    return (reference_img, candidate_img)
 
-    Output:
-        pixel_pairs (list of pixel pair dict): Pixel pairs are
-            {'coordinates', (int, int),
-             'weighting', float,
-             'reference', list of numbers,
-             'candidate', list of numbers}
-    '''
+
+def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
+    ''' Creates the pseudo-invariant features from the reference and candidate
+    gimages by filtering out pixels where either the candidate or mask alpha
+    value is zero (masked)'''
     all_mask = numpy.logical_not(numpy.logical_or(
-        weighting == 0, candidate_mask == 0))
+        reference_gimage.alpha == 0, candidate_gimage.alpha == 0))
 
     valid_pixels = numpy.nonzero(all_mask)
 
+    def per_band_values(gimg, row, col):
+        return [band[row, col] for band in gimg.bands]
+
+    no_total_pixels = reference_gimage.bands[0].shape[0] * \
+        reference_gimage.bands[0].shape[1]
+    no_valid_pixels = len(valid_pixels[0])
+    valid_percent = 100 * no_valid_pixels / no_total_pixels
+    logging.info('Found {} pifs out of {} pixels ({}%)'.format(
+        no_valid_pixels, no_total_pixels, valid_percent))
+
     pixel_pairs = []
-    for pixel in range(len(valid_pixels[0])):
+    for pixel in range(no_valid_pixels):
         row = valid_pixels[0][pixel]
         col = valid_pixels[1][pixel]
-        pixel_dict = {'coordinates': (row, col),
-                      'weighting': weighting[row, col],
-                      'reference': time_stack[:, row, col],
-                      'candidate': candidate[:, row, col]}
+        pixel_dict = {
+            'coordinates': (row, col),
+            'weighting': reference_gimage.alpha[row, col],
+            'reference': per_band_values(reference_gimage, row, col),
+            'candidate': per_band_values(candidate_gimage, row, col)}
         pixel_pairs.append(pixel_dict)
 
     return pixel_pairs

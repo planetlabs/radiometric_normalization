@@ -15,122 +15,129 @@ limitations under the License.
 '''
 import unittest
 import numpy
-import os
 
-from osgeo import gdal
-
-from radiometric_normalization import time_stack
+from radiometric_normalization import time_stack, gimage
 
 
 class Tests(unittest.TestCase):
-    def test_organise_images_to_bands(self):
-        # Seven images of five bands of 10 by 11 pixels
-        all_images = []
-        nodata = 2 ** 15 - 1
-        for i in range(7):
-            image = numpy.random.randint(
-                2 ** 15, size=(5, 10, 11)).astype('uint16')
-            all_images.append(image)
-
-        all_bands = time_stack._organise_images_to_bands(all_images, nodata)
-        no_bands = len(all_bands)
-        no_images = len(all_bands[0])
-        rows, cols = all_bands[0][0].shape
-
-        self.assertEqual(no_bands, 5)
-        self.assertEqual(no_images, 7)
-        self.assertEqual(rows, 10)
-        self.assertEqual(cols, 11)
-        for image in range(no_images):
-            for band in range(no_bands):
-                for row in range(rows):
-                    for col in range(cols):
-                        self.assertEqual(all_bands[band][image].data[row, col],
-                                         all_images[image][band, row, col])
-
-    def test_mean_with_uniform_weight(self):
+    def test__mean_with_uniform_weight(self):
         # Three images of three bands of 2 by 2 pixels
-        nodata = 2 ** 15 - 1
+        gimage_one = gimage.GImage(
+            [numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[7, 8],
+                          [6, 3]], dtype='uint16')],
+            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'), {})
 
-        all_bands = [[numpy.ma.array(numpy.array([[4, 1],
-                                                  [2, 5]]),
-                                     mask=[[0, 1], [0, 0]],
-                                     dtype='uint16'),
-                      numpy.ma.array(numpy.array([[3, 3],
-                                                  [3, 1]]),
-                                     mask=[[0, 1], [1, 0]],
-                                     dtype='uint16'),
-                      numpy.ma.array(numpy.array([[2, 9],
-                                                  [10, 8]]),
-                                     mask=[[0, 1], [0, 0]],
-                                     dtype='uint16')],
-                     [numpy.ma.array(numpy.array([[7, 8],
-                                                  [6, 3]]),
-                                     mask=[[0, 1], [1, 0]],
-                                     dtype='uint16'),
-                      numpy.ma.array(numpy.array([[5, 1],
-                                                  [7, 9]]),
-                                     mask=[[0, 1], [0, 1]],
-                                     dtype='uint16'),
-                      numpy.ma.array(numpy.array([[10, 7],
-                                                  [1, 2]]),
-                                     mask=[[0, 1], [0, 0]],
-                                     dtype='uint16')],
-                     [numpy.ma.array(numpy.array([[3, 2],
-                                                  [7, 4]]),
-                                     mask=[[0, 1], [0, 0]],
-                                     dtype='uint16'),
-                      numpy.ma.array(numpy.array([[6, 5],
-                                                  [1, 2]]),
-                                     mask=[[0, 1], [0, 0]],
-                                     dtype='uint16'),
-                      numpy.ma.array(numpy.array([[7, 6],
-                                                  [4, 9]]),
-                                     mask=[[0, 1], [0, 0]],
-                                     dtype='uint16')]]
+        gimage_two = gimage.GImage(
+            [numpy.array([[9, 9],
+                          [5, 1]], dtype='uint16'),
+             numpy.array([[2, 7],
+                          [7, 3]], dtype='uint16'),
+             numpy.array([[2, 6],
+                          [7, 2]], dtype='uint16')],
+            numpy.array([[0, 0], [65535, 65535]], dtype='uint16'), {})
 
-        golden_output = [numpy.array([[3, nodata],
-                                      [6, 4]],
-                                     dtype='uint16'),
-                         numpy.array([[7, nodata],
-                                      [4, 2]],
-                                     dtype='uint16'),
-                         numpy.array([[5, nodata],
-                                      [4, 5]],
-                                     dtype='uint16')]
+        gimage_three = gimage.GImage(
+            [numpy.array([[4, 7],
+                          [5, 3]], dtype='uint16'),
+             numpy.array([[1, 2],
+                          [5, 1]], dtype='uint16'),
+             numpy.array([[1, 6],
+                          [3, 2]], dtype='uint16')],
+            numpy.array([[65535, 0], [65535, 0]], dtype='uint16'), {})
 
-        golden_mask = numpy.array([[65535, 0],
-                                   [65535, 65535]],
-                                  dtype='uint16')
+        all_gimages = [gimage_one, gimage_two, gimage_three]
 
-        output_bands, mask = time_stack._mean_with_uniform_weight(all_bands,
-                                                                  nodata,
-                                                                  numpy.uint16)
+        golden_output = gimage.GImage(
+            [numpy.array([[4, 0],
+                          [4, 3]], dtype='uint16'),
+             numpy.array([[2, 0],
+                          [4, 4]], dtype='uint16'),
+             numpy.array([[4, 0],
+                          [5, 2]], dtype='uint16')],
+            numpy.array([[65535, 0],
+                         [65535, 65535]], dtype='uint16'), {})
+
+        output_gimage = time_stack._mean_with_uniform_weight(all_gimages,
+                                                             numpy.uint16)
 
         for band in range(3):
-            self.assertEqual(output_bands[band].all(),
-                             golden_output[band].all())
-        self.assertEqual(mask.all(), golden_mask.all())
+            self.assertEqual(output_gimage.bands[band].all(),
+                             golden_output.bands[band].all())
+        self.assertEqual(output_gimage.alpha.all(),
+                         golden_output.alpha.all())
+        self.assertEqual(output_gimage.metadata,
+                         golden_output.metadata)
 
-    def test_write_out_bands(self):
-        # An image with eight bands of 102 by 99 pixels
-        # and an alpha band
-        image = numpy.random.randint(
-            2 ** 15, size=(8, 102, 99)).astype('uint16')
-        mask = numpy.ones((102, 99), dtype='uint16')
-        output_path = 'test.tif'
-        output_nodata = 0
-        time_stack._write_out_bands(image, mask,
-                                    output_path, output_nodata)
+    def test__mean_one_band(self):
+        # Four images of two bands of 2 by 2 pixels
+        gimage_one = gimage.GImage(
+            [numpy.array([[0, 0],
+                          [0, 0]], dtype='uint16'),
+             numpy.array([[1, 7],
+                          [2, 6]], dtype='uint16')],
+            numpy.array([[0, 65535], [65535, 0]], dtype='uint16'), {})
 
-        # Check it
-        image_ds = gdal.Open('test.tif')
-        self.assertEqual(image_ds.RasterCount, 9)
-        self.assertEqual(image_ds.RasterXSize, 99)
-        self.assertEqual(image_ds.RasterYSize, 102)
-        self.assertEqual(image_ds.GetRasterBand(1).GetNoDataValue(), 0)
+        gimage_two = gimage.GImage(
+            [numpy.array([[0, 0],
+                          [0, 0]], dtype='uint16'),
+             numpy.array([[9, 2],
+                          [2, 8]], dtype='uint16')],
+            numpy.array([[0, 65535], [65535, 65535]], dtype='uint16'), {})
 
-        os.unlink('test.tif')
+        gimage_three = gimage.GImage(
+            [numpy.array([[0, 0],
+                          [0, 0]], dtype='uint16'),
+             numpy.array([[6, 8],
+                          [4, 9]], dtype='uint16')],
+            numpy.array([[0, 65535], [65535, 0]], dtype='uint16'), {})
+
+        gimage_four = gimage.GImage(
+            [numpy.array([[0, 0],
+                          [0, 0]], dtype='uint16'),
+             numpy.array([[8, 4],
+                          [6, 2]], dtype='uint16')],
+            numpy.array([[0, 0], [65535, 65535]], dtype='uint16'), {})
+
+        all_gimages = [gimage_one, gimage_two, gimage_three, gimage_four]
+
+        golden_mean = numpy.array([[0, 5],
+                                   [3, 5]], dtype='uint16')
+        golden_mask = numpy.array([[False, True],
+                                   [True, True]], dtype='bool')
+
+        band_mean, band_mask = time_stack._mean_one_band(all_gimages, 1,
+                                                         numpy.uint16)
+
+        self.assertEqual(band_mean.all(),
+                         golden_mean.all())
+        self.assertEqual(band_mask.all(),
+                         golden_mask.all())
+
+    def test__uniform_weight_alpha(self):
+        # Six images of 2 by 2 pixels
+        all_masks = [numpy.array([[False, True],
+                                  [False, False]], dtype='bool'),
+                     numpy.array([[False, False],
+                                  [False, False]], dtype='bool'),
+                     numpy.array([[True, True],
+                                  [False, False]], dtype='bool'),
+                     numpy.array([[True, True],
+                                  [False, True]], dtype='bool'),
+                     numpy.array([[False, True],
+                                  [False, True]], dtype='bool')]
+
+        golden_alpha = numpy.array([[False, True],
+                                    [True, False]], dtype='uint16')
+
+        output_alpha = time_stack._uniform_weight_alpha(all_masks,
+                                                        numpy.uint16)
+
+        self.assertEqual(output_alpha.all(),
+                         golden_alpha.all())
 
 
 if __name__ == '__main__':

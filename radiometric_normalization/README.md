@@ -1,4 +1,4 @@
-# Module overview #
+# Module overview
 
 The full radiometric normalization workflow is contained within normalize.py. It calls on three analysis modules. 
 
@@ -8,68 +8,69 @@ The full radiometric normalization workflow is contained within normalize.py. It
 
 There is also an additional validation module (validation.py). This will be used in regression testing of the library.
 
-## Time stack analysis - time_stack.py ##
+## Time stack analysis - time_stack.py
 
-This is where the images of the same geographic location over time are prepared for further analysis. 
+This is where a single reference image is create from a set of images of the same geographic location over time. 
 
-### Input ###
+### Input
 * A list of paths to images
-* Each image should should cover exactly the same geographic location
+* Each image should cover exactly the same geographic location
 * Each image should contain exactly the same number of pixels (rows and cols)
 * Each image should have the same no data value
 
-### Function ###
+### Function
 
-This module analyses the set of images and creates a single output image that reflects the set of input images (e.g. the mean of each pixel over time) as well as a weighting alpha mask that gives an indication of how strong each pixel would be if used as a pseudo-invariant feature.
+This module analyzes the set of images and creates a single output image that reflects the set of input images (e.g. the mean of each pixel over time) as well as a weighting alpha mask that gives an indication of how strong each pixel would be if used as a pseudo-invariant feature.
 
-### Algorithm ###
+### Algorithm
 * Mean with uniform weight: Currently only this method is implemented. It calculates the mean of each pixel over time and has a uniform weight (0 for pixels where it is a no data pixel for every image in the time stack) and 65535 for valid pixels. 
 
-### Output ####
+### Output
 * A single image with an alpha mask
 * The image contains data derived from the set of input images
 * The datatype is always uint16
 
-## Pseudo-invariant feature generation - pif.py ##
+## Pseudo-invariant feature generation - pif.py
 
-The time stack image is analysed for pixels that are stable over time.
+The reference and candidate images are analyzed to find features that are invariant over the set. The motivation for this step is removing the effect of change (e.g. clouds or snow) from the normalization transformation calculation.
 
-### Input ###
-* A time stack image and a satellite image of the same geographic location as the time stack image.
-* Both the time stack image and the satellite image should contain exactly the same number of pixels (rows and cols)
+### Input
+* A reference image and a satellite image of the same geographic location
+* Both the reference image and the satellite image should contain exactly the same number of pixels (rows and cols)
 
-### Algorithm ###
+### Algorithm
 * Filtering out pixels with no data values: This method simply filters out all pixels that have no data (as indicated by a 0 in the alpha mask at that pixel location)
 
-### Output ###
-* A list of data on pixel pairs:
-* The data on each pixel pair consists of:
-	* coordinates (int, int): Indicates the row and col entry this pixel pair refers to
-	* weighting (float): Indicates how strong this pixel location is as an pseudo invariant feature
-	* reference (list of numbers): A list of the intensity value of the time stack image at each band at this pixel location
+### Output
+* A list of pseudo-invariant features:
+* Each pseudo-invariant feature is a dictionary containing the following entries:
+	* coordinates (int, int): The row and col entry this pixel pair refers to
+	* weighting (float): How strong this pixel location is as an pseudo-invariant feature
+	* reference (list of numbers): A list of the intensity value of the reference image at each band at this pixel location
 	* candidate (list of numbers): A list of the intensity value of the satellite image at each band at this pixel location
 
-## Radiometric transformation - transformation.py ##
+## Radiometric transformation - transformation.py
 
-Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference time stack.
+Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference image.
 
-### Input ###
-* A list of data on each pixel pair
+### Input
+* A list of pseudo-invariant features
 
-### Algorithm ###
-* Linear relationship: This method simply uses the mean and standard deviations of the data sets to the gain and offset to transform the candidate distribution to the reference time stack one.
+### Algorithm
+* Linear relationship: This method simply uses the mean and standard deviations of the data sets to the gain and offset to transform the candidate distribution to the reference distribution.
 
-### Output ###
+### Output
 * A per-band look up table (as a numpy array)
 
-## Validation - validation.py ##
-This module is intended for functions that can score how well the algorithm is working. This will be useful for regression testing. 
+## Validation - validation.py
 
-### Input ###
-* Two GImages
+Score how well two images match. This will be useful for regression testing. 
 
-### Algorithm ###
+### Input
+* Two GImages (in-memory representations of geographic rasters, see gimage.py)
+
+### Algorithm
 * RMSE: Calculate the root mean squared difference between the two images, this will be taken as the score.
 
-### Output ###
-* A score of how similar the two images are
+### Output
+* A score (float) of how similar the two images are

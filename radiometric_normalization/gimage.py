@@ -27,25 +27,37 @@ from osgeo import gdal, gdal_array
 GImage = namedtuple('GImage', 'bands, alpha, metadata')
 
 
-def save(gimage, filename):
+def save(gimage, filename, nodata=None):
+    gdal_ds = create_ds(gimage, filename)
+    save_to_ds(gimage, gdal_ds, nodata)
 
+
+def create_ds(gimage, filename):
+    # Alpha is saved as the last band
     band_count = len(gimage.bands) + 1
     options = ['ALPHA=YES']
 
     if band_count == 4:
         options.append('PHOTOMETRIC=RGB')
 
-    datatype = gdal_array.NumericTypeCodeToGDALTypeCode(
-        gimage.bands[0].dtype.type)
+    datatype = gdal.GDT_UInt16
     ysize, xsize = gimage.bands[0].shape
     gdal_ds = gdal.GetDriverByName('GTIFF').Create(
         filename, xsize, ysize, band_count, datatype,
         options=options)
+    return gdal_ds
 
-    for i in range(len(gimage.bands)):
+
+def save_to_ds(gimage, gdal_ds, nodata=None):
+    assert gdal_ds.RasterCount == len(gimage.bands) + 1
+    assert gdal_ds.RasterXSize == gimage.bands[0].shape[1]
+    assert gdal_ds.RasterYSize == gimage.bands[0].shape[0]
+
+    for i, band in enumerate(gimage.bands):
         gdal_array.BandWriteArray(
-            gdal_ds.GetRasterBand(i + 1),
-            gimage.bands[i])
+            gdal_ds.GetRasterBand(i + 1), band)
+        if nodata is not None:
+            gdal_ds.GetRasterBand(i + 1).SetNoDataValue(nodata)
 
     alpha_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     gdal_array.BandWriteArray(alpha_band, gimage.alpha)
@@ -59,7 +71,17 @@ def save(gimage, filename):
         gdal_ds.SetMetadata(gimage.metadata['rpc'], 'RPC')
 
 
-def load(filename):
+def load_candidate(filename):
+    tmp_img = load(filename)
+
+    logging.debug("Candidate image: moving last band to alpha band.")
+    bands = tmp_img.bands[:-1]
+    alpha = tmp_img.bands[-1]
+    return GImage(bands, alpha, tmp_img.metadata)
+
+
+def load(filename, nodata=None):
+    logging.debug("Loading {} as GImage.".format(filename))
     gdal_ds = gdal.Open(filename)
     if gdal_ds is None:
         raise Exception('Unable to open file "{}" with gdal.Open()'.format(
@@ -68,6 +90,9 @@ def load(filename):
     alpha, band_count = _read_alpha_and_band_count(gdal_ds)
     bands = _read_bands(gdal_ds, band_count)
     metadata = _read_metadata(gdal_ds)
+
+    if nodata is not None:
+        alpha = alpha * _nodata_to_mask(bands, nodata)
     return GImage(bands, alpha, metadata)
 
 
@@ -108,13 +133,23 @@ def _read_bands(gdal_ds, band_count):
 
 
 def _read_alpha_and_band_count(gdal_ds):
+    logging.debug("Loading alpha. Initial band count: {}".format(
+        gdal_ds.RasterCount))
     last_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     if last_band.GetColorInterpretation() == gdal.GCI_AlphaBand:
         alpha = last_band.ReadAsArray()
+        logging.debug("Alpha band found, reducing band count")
         band_count = gdal_ds.RasterCount - 1
     else:
         alpha = 65535 * numpy.ones(
-            (gdal_ds.RasterXSize, gdal_ds.RasterYSize),
+            (gdal_ds.RasterYSize, gdal_ds.RasterXSize),
             dtype=numpy.uint16)
         band_count = gdal_ds.RasterCount
     return alpha, band_count
+
+
+def _nodata_to_mask(bands, nodata):
+    alpha = numpy.ones(bands[0].shape, dtype=numpy.uint16)
+    for band in bands:
+        alpha[band == nodata] = 0
+    return alpha

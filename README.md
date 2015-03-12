@@ -1,40 +1,38 @@
 # Radiometric Normalization #
 
-This library contains the functions to analyse a set of reference images for features that have a stable level of intensity over the whole reference set and use these features to normalize the intensity distribution of separate candidate image.
+This library implements functionality for normalizing a candidate image to time-invariant features in a set of reference images covering a time series. This includes generating a time-invariant reference image from a time stack, identifying features that are invariante between the reference time stack and a candidate image, calculating a linear transformation that normalizes the candidate image to the reference image, applying the linear transform, and validating the results.
 
-It was originally created to radiometrically normalize a satellite image to a time series from a reference
-(atmospherically corrected) dataset.
+The primary use case for this library is radiometrically normalizing a satellite image to a time series from a reference dataset.
 
-## How to use ##
+## Development Environment
 
-This git repo contains a vagrant environment within which to run the library in. To start the vagrant environment, in the root directory of the repo type:
+This library uses a Vagrant VM for the development environment and requires [Vagrant](https://www.vagrantup.com/) on the host computer.
 
-    vagrant up
+To start the VM, in the root directory of the repo type:
+```
+vagrant up
+``
 
-Then log into the vagrant environment by typing:
+Log into the VM by typing:
+```
+vagrant ssh
+```
 
-    vagrant ssh
+Navigate to the root directory:
+```
+cd /vagrant
+```
+This directory is shared between the VM and host.
 
-Once in, you can navigate to the root directory:
+Run the unit tests by typing:
+```
+nosetests ./tests
+```
 
-    cd /vagrant
 
-And you can run the unit tests by typing:
+## Organization of the repo
 
-    nosetests ./tests
-
-If successful it should end with:
-
-    vagrant@precise64:/vagrant$ nosetests ./tests 
-    .............
-    ----------------------------------------------------------------------
-    Ran 13 tests in 0.112s
-
-    OK
-
-## Organisation of the repo ##
-
-The code in this repo are kept in two directories: 'radiometric_normalization' and 'tests'
+The code in this repo is kept in two directories: 'radiometric_normalization' and 'tests'
 
 'radiometric_normalization' contains the algorithm and functions of the library. 'normalize.py' is the top level module for the full workflow of running radiometric normalization and 'validate.py' is the module for validating radiometric normalization.
 

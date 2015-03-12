@@ -41,6 +41,13 @@ class Tests(unittest.TestCase):
     def tearDown(self):
         os.unlink(self.test_photometric_alpha_image)
 
+    def test__nodata_to_mask(self):
+        test_band = numpy.array([[0, 1, 2], [1, 2, 3]], dtype=numpy.uint16)
+        test_mask = gimage._nodata_to_mask([test_band], 3)
+
+        expected_mask = numpy.array([[1, 1, 1], [1, 1, 0]], dtype=numpy.uint16)
+        numpy.testing.assert_array_equal(test_mask, expected_mask)
+
     def test__read_metadata(self):
         gdal_ds = gdal.Open(self.test_photometric_alpha_image)
         test_metadata = gimage._read_metadata(gdal_ds)
@@ -60,11 +67,30 @@ class Tests(unittest.TestCase):
         self.assertEqual(band_count, 3)
         numpy.testing.assert_array_equal(alpha, self.mask)
 
-    def test_save(self):
-        output_file = 'test_file.tif'
+    def test_create_ds(self):
+        output_file = 'test_create_ds.tif'
+        test_band = numpy.array([[0, 1, 2], [2, 3, 4]], dtype=numpy.uint16)
+        test_gimage = gimage.GImage([test_band], self.mask, self.metadata)
+        test_ds = gimage.create_ds(test_gimage, output_file)
 
-        test_gimage = gimage.GImage([self.band], self.mask, self.metadata)
-        gimage.save(test_gimage, output_file)
+        self.assertEqual(test_ds.RasterCount, 2)
+        self.assertEqual(test_ds.RasterXSize, 3)
+        self.assertEqual(test_ds.RasterYSize, 2)
+
+        os.unlink(output_file)
+
+    def test_save_to_ds(self):
+        output_file = 'test_save_to_ds.tif'
+
+        test_band = numpy.array([[0, 1], [2, 3]], dtype=numpy.uint16)
+        test_gimage = gimage.GImage([test_band], self.mask, self.metadata)
+        output_ds = gdal.GetDriverByName('GTiff').Create(
+            output_file, 2, 2, 2, gdal.GDT_UInt16,
+            options=['ALPHA=YES'])
+        gimage.save_to_ds(test_gimage, output_ds, nodata=3)
+
+        # Required for gdal to write to file
+        output_ds = None
 
         test_ds = gdal.Open(output_file)
 
@@ -73,6 +99,9 @@ class Tests(unittest.TestCase):
 
         saved_band = test_ds.GetRasterBand(1).ReadAsArray()
         numpy.testing.assert_array_equal(saved_band, self.band)
+
+        saved_nodata = test_ds.GetRasterBand(1).GetNoDataValue()
+        self.assertEqual(saved_nodata, 3)
 
         saved_alpha = test_ds.GetRasterBand(2).ReadAsArray()
         numpy.testing.assert_array_equal(saved_alpha, self.mask)
