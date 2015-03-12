@@ -61,6 +61,35 @@ def generate(image_paths, output_path, method='identity'):
     gimage.save(output_gimage, output_path, nodata=output_nodata)
 
 
+def _load_all_gimages(image_paths):
+    ''' Reads in a list of image paths and outputs a list of numpy arrays
+    representing the bands.
+
+    Input:
+        image_paths (list of str): A list of the input file paths
+
+    Output:
+        all_images (list of gimages): A list of all the images loaded into
+            memory as gimages
+    '''
+
+    test_gimage = gimage.load(image_paths[0])
+
+    all_gimages = []
+    for image_path in image_paths:
+        current_gimage = gimage.load(image_path)
+        assert len(current_gimage.bands) == len(test_gimage.bands), \
+            '{} and {} have different number of bands: {} / {}'.format(
+                image_path, image_paths[0],
+                len(current_gimage.bands), len(test_gimage.bands))
+        assert current_gimage.bands[0].shape == test_gimage.bands[0].shape, \
+            '{} and {} have different shapes'.format(
+                image_path, image_paths[0])
+        all_gimages.append(current_gimage)
+
+    return all_gimages
+
+
 def _read_in_bands(image_paths):
     ''' Reads in a list of image paths and outputs a list of numpy arrays
     representing the bands.
