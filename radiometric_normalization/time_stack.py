@@ -73,9 +73,8 @@ def _load_all_gimages(image_paths):
             memory as gimages
     '''
 
-    test_gimage = gimage.load(image_paths[0])
-
-    all_gimages = []
+    test_gimage = gimage.load(image_paths.pop(0))
+    all_gimages = [test_gimage]
     for image_path in image_paths:
         current_gimage = gimage.load(image_path)
         assert len(current_gimage.bands) == len(test_gimage.bands), \
