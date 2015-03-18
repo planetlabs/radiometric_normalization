@@ -29,11 +29,12 @@ def generate_luts(candidate_path, reference_paths, config=None):
         reference_paths,
         method=config['time_stack_method'])
 
-    pifs = pif.generate(candidate_path,
-                        reference_path=reference_image,
-                        method=config['pif_method'])
+    pif_weight, reference_img, candidate_img = pif.generate(
+        candidate_path, reference_path=reference_image,
+        method=config['pif_method'])
     transformations = transformation.generate(
-        pifs, method=config['transformation_method'])
+        pif_weight, reference_img, candidate_img,
+        method=config['transformation_method'])
     luts = transformation.transformations_to_luts(transformations)
     return luts
 
