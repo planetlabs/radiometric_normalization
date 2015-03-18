@@ -40,7 +40,7 @@ def generate(candidate_path, reference_path, method='identity'):
     else:
         raise NotImplementedError("Only 'identity' method is implemented.")
 
-    return pif_weight
+    return pif_weight, reference_img, candidate_img
 
 
 def _load_gimages(reference_path, candidate_path):

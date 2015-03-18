@@ -49,7 +49,7 @@ The reference and candidate images are analyzed to find features that are invari
 Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference image.
 
 ### Input
-* A list of pseudo-invariant features
+* The strength of each pixel as a pseudo-invariant feature (a numpy array)
 
 ### Algorithm
 * Linear relationship: This method simply uses the mean and standard deviations of the data sets to the gain and offset to transform the candidate distribution to the reference distribution.

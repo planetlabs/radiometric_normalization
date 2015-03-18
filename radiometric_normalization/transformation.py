@@ -24,23 +24,20 @@ PIFSet = namedtuple('PIFSet', 'reference, candidate, weight')
 LinearTransformation = namedtuple('LinearTransformation', 'gain, offset')
 
 
-def generate(pifs, method='linear_relationship'):
+def generate(pif_weights, reference_img, candidate_img,
+             method='linear_relationship'):
     '''Calculates the look-up table that applies a radiometric transformation
     to the candidate image based on pseudo-invariant features (pifs). Each
-    pif is a dict with fields 'coordinates', 'reference',
-    'candidate', and 'weight'.
+    pixel is given a strength as a PIF in the pif_weightings array.
 
-    'reference' and 'candidate' are tuples with length equal to the number of
-    radiometric bands
-    'weight' is a float
-    'coordinates' is a tuple of length 2
-
-    :param pifs: list of pifs (dicts)
+    :param pif_weights: array of pif strength for each pixel (numpy array)
+    :param reference_img: a gimage representing the reference image
+    :param candidate_img: a gimage representing the candidate image
     :param method: transformation generation method
     :param output transformations: list of LinearTransformations of length
     equal to number of entries in input pif 'reference' and 'candidate'
     '''
-    pif_set = pifs_to_pifset(pifs)
+    pif_set = pifs_to_pifset(pif_weights, reference_img, candidate_img)
     transform_fcn = get_transform_function(method)
     return transform_fcn(pif_set)
 
@@ -58,16 +55,22 @@ def get_transform_function(method):
     return fcn
 
 
-def pifs_to_pifset(pifs):
+def pifs_to_pifset(pif_weights, reference_img, candidate_img):
     '''
     Creates a PIFSet, where weights, reference values, and candidate
     values of pifs are combined into separate numpy arrays.
     '''
-    weight = numpy.array([pif['weighting'] for pif in pifs])
-    r_values = numpy.array([pif['reference'] for pif in pifs],
+
+    valid_pixels = numpy.nonzero(pif_weights)
+
+    weight = numpy.array(pif_weights[valid_pixels])
+    r_values = numpy.array([[band[pixel[0], pixel[1]] for band in
+                             reference_img.bands] for pixel in valid_pixels],
                            dtype=numpy.uint16)
-    c_values = numpy.array([pif['candidate'] for pif in pifs],
+    c_values = numpy.array([[band[pixel[0], pixel[1]] for band in
+                             candidate_img.bands] for pixel in valid_pixels],
                            dtype=numpy.uint16)
+
     return PIFSet(r_values, c_values, weight)
 
 
