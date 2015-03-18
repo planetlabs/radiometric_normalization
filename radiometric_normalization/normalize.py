@@ -38,6 +38,22 @@ def generate_transforms(candidate_path, reference_paths, config=None):
     return transformations
 
 
+def apply_transform(input_path, transformations, output_path):
+    def apply_lut(band, lut):
+        'Changes band intensity values based on intensity look up table (lut)'
+        if lut.dtype != band.dtype:
+            raise Exception(
+                "Band ({}) and lut ({}) must be the same data type.").format(
+                band.dtype, lut.dtype)
+        return numpy.take(lut, band, mode='clip')
+
+    luts = transformation.transformations_to_luts(transformations)
+    img = gimage.load(input_path)
+    for i in range(len(img.bands)):
+        img.bands[i] = apply_lut(img.bands[i], luts[i])
+    img.save(output_path)
+
+
 def generate_luts(candidate_path, reference_paths, config=None):
     if config is None:
         config = {'time_stack_method': 'identity',
