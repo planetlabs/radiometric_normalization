@@ -59,23 +59,39 @@ def pifs_to_pifset(pif_weights, reference_gimg, candidate_gimg):
     Creates a PIFSet, where weights, reference values, and candidate
     values of pifs are combined into separate numpy arrays.
     '''
+    logging.debug('converting pifs for processing')
 
     valid_pixels = numpy.nonzero(pif_weights)
+    logging.info('{} pifs out of {} pixels ({}%)'.format(
+        valid_pixels[0].size, pif_weights.size,
+        int(100 * float(valid_pixels[0].size) / pif_weights.size)))
 
     weight = numpy.array(pif_weights[valid_pixels])
+    logging.debug('weight shape: {}'.format(weight.shape))
+
     r_values = numpy.dstack([band[valid_pixels]for band in
                             reference_gimg.bands])[0, :]
+    logging.debug('reference values shape: {}'.format(r_values.shape))
+
     c_values = numpy.dstack([band[valid_pixels]for band in
                             candidate_gimg.bands])[0, :]
+    logging.debug('candidate values shape: {}'.format(c_values.shape))
 
     return PIFSet(r_values, c_values, weight)
 
 
 def linear_relationship(pif_set):
+    logging.info('Calculating linear relationship transformations')
+
     c_means = numpy.mean(pif_set.candidate, axis=0)
     r_means = numpy.mean(pif_set.reference, axis=0)
+    logging.info('Means: candidate - {}, reference {}'.format(
+        c_means, r_means))
+
     c_stds = numpy.std(pif_set.candidate, axis=0)
     r_stds = numpy.std(pif_set.reference, axis=0)
+    logging.info('Stddev: candidate - {}, reference {}'.format(
+        c_stds, r_stds))
 
     def calculate_gain(c_std, r_std):
         # if c_std is zero it is a constant image so default gain to 1
@@ -104,6 +120,8 @@ def apply(input_gimage, transformations):
     :param output: gimage that represents input_gimage with
         transformations applied
     '''
+    logging.info('Applying linear transformations to gimage')
+
     def apply_lut(band, lut):
         'Changes band intensity values based on intensity look up table (lut)'
         if lut.dtype != band.dtype:
@@ -124,6 +142,7 @@ def apply(input_gimage, transformations):
 
 
 def linear_transformation_to_lut(linear_transformation, max_value=None):
+    logging.debug('Creating lut from linear transformation')
     dtype = numpy.uint16
 
     min_value = 0
