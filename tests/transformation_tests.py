@@ -84,6 +84,37 @@ class Tests(unittest.TestCase):
         expected_offsets = [1, 0, 1, -1]
         self.assertEqual(offsets, expected_offsets)
 
+    def test_apply(self):
+        test_band = numpy.array([[0, 100], [1000, 65535]], dtype=numpy.uint16)
+        test_alpha = 2 ** 16 - 1 * numpy.ones(
+            test_band.shape, dtype=numpy.uint16)
+        test_input_gimg = gimage.GImage(
+            [test_band, test_band, test_band, test_band], test_alpha, {})
+        test_transformations = [
+            transformation.LinearTransformation(0.5, 0),
+            transformation.LinearTransformation(1, 500),
+            transformation.LinearTransformation(1, -500),
+            transformation.LinearTransformation(5, 0)]
+
+        output_gimg = transformation.apply(
+            test_input_gimg, test_transformations)
+
+        expected_band1 = numpy.array(
+            [[0, 50], [500, 32767]], dtype=numpy.uint16)
+        numpy.testing.assert_array_equal(output_gimg.bands[0], expected_band1)
+
+        expected_band2 = numpy.array(
+            [[500, 600], [1500, 65535]], dtype=numpy.uint16)
+        numpy.testing.assert_array_equal(output_gimg.bands[1], expected_band2)
+
+        expected_band3 = numpy.array(
+            [[0, 0], [500, 65035]], dtype=numpy.uint16)
+        numpy.testing.assert_array_equal(output_gimg.bands[2], expected_band3)
+
+        expected_band4 = numpy.array(
+            [[0, 500], [5000, 65535]], dtype=numpy.uint16)
+        numpy.testing.assert_array_equal(output_gimg.bands[3], expected_band4)
+
     def test_linear_transformation_to_lut(self):
         test_linear_transform = \
             transformation.LinearTransformation(gain=1, offset=2)

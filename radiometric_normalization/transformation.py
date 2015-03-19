@@ -18,9 +18,12 @@ from collections import namedtuple
 
 import numpy
 
+from radiometric_normalization import gimage
+
 
 PIFSet = namedtuple('PIFSet', 'reference, candidate, weight')
 
+# gain and offset are floats
 LinearTransformation = namedtuple('LinearTransformation', 'gain, offset')
 
 
@@ -41,11 +44,6 @@ def generate(pif_weights, reference_gimg, candidate_gimg,
     pif_set = pifs_to_pifset(pif_weights, reference_gimg, candidate_gimg)
     transform_fcn = get_transform_function(method)
     return transform_fcn(pif_set)
-
-
-def transformations_to_luts(transformations):
-    luts = [linear_transformation_to_lut(lt) for lt in transformations]
-    return luts
 
 
 def get_transform_function(method):
@@ -95,6 +93,34 @@ def linear_relationship(pif_set):
         transformations.append(LinearTransformation(gain, offset))
 
     return transformations
+
+
+def apply(input_gimage, transformations):
+    '''Applies a set of linear transformations to a gimage
+
+    :param input_gimage: gimage transformations are applied to
+    :param transformations: set of LinearTransformations (length equal to the
+        number of bands in input_gimage) to apply
+    :param output: gimage that represents input_gimage with
+        transformations applied
+    '''
+    def apply_lut(band, lut):
+        'Changes band intensity values based on intensity look up table (lut)'
+        if lut.dtype != band.dtype:
+            raise Exception(
+                "Band ({}) and lut ({}) must be the same data type.").format(
+                band.dtype, lut.dtype)
+        return numpy.take(lut, band, mode='clip')
+
+    assert len(input_gimage.bands) == len(transformations)
+
+    output_bands = []
+    for input_band, lt in zip(input_gimage.bands, transformations):
+        lut = linear_transformation_to_lut(lt)
+        output_bands.append(apply_lut(input_band, lut))
+
+    return gimage.GImage(
+        output_bands, input_gimage.alpha, input_gimage.metadata)
 
 
 def linear_transformation_to_lut(linear_transformation, max_value=None):

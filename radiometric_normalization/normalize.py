@@ -13,8 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
-import numpy
-
 from radiometric_normalization import \
     time_stack, pif, transformation, gimage
 
@@ -38,17 +36,7 @@ def generate_transforms(candidate_path, reference_paths, config=None):
     return transformations
 
 
-def apply_transform(input_path, transformations, output_path):
-    def apply_lut(band, lut):
-        'Changes band intensity values based on intensity look up table (lut)'
-        if lut.dtype != band.dtype:
-            raise Exception(
-                "Band ({}) and lut ({}) must be the same data type.").format(
-                band.dtype, lut.dtype)
-        return numpy.take(lut, band, mode='clip')
-
-    luts = transformation.transformations_to_luts(transformations)
-    img = gimage.load(input_path)
-    for i in range(len(img.bands)):
-        img.bands[i] = apply_lut(img.bands[i], luts[i])
-    img.save(output_path)
+def apply_transforms(input_path, transformations, output_path):
+    gimg = gimage.load(input_path)
+    out_gimg = transformation.apply(gimg, transformations)
+    out_gimg.save(output_path)
