@@ -42,19 +42,14 @@ The reference and candidate images are analyzed to find features that are invari
 * Filtering out pixels with no data values: This method simply filters out all pixels that have no data (as indicated by a 0 in the alpha mask at that pixel location)
 
 ### Output
-* A list of pseudo-invariant features:
-* Each pseudo-invariant feature is a dictionary containing the following entries:
-	* coordinates (int, int): The row and col entry this pixel pair refers to
-	* weighting (float): How strong this pixel location is as an pseudo-invariant feature
-	* reference (list of numbers): A list of the intensity value of the reference image at each band at this pixel location
-	* candidate (list of numbers): A list of the intensity value of the satellite image at each band at this pixel location
+* An array to indicate how strong a pseudo invariant feature each pixel is in the image (0 indicates that the pixel is not a valid PIF)
 
 ## Radiometric transformation - transformation.py
 
 Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference image.
 
 ### Input
-* A list of pseudo-invariant features
+* The strength of each pixel as a pseudo-invariant feature (a numpy array)
 
 ### Algorithm
 * Linear relationship: This method simply uses the mean and standard deviations of the data sets to the gain and offset to transform the candidate distribution to the reference distribution.

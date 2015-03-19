@@ -28,34 +28,20 @@ class Tests(unittest.TestCase):
         r_alpha = numpy.array([[0, 65535], [65535, 65535]], dtype='uint16')
         reference = gimage.GImage([r_band0, r_band1, r_band2], r_alpha, {})
 
-        # Pixels at [0, 0] and [1, 1] are not masked
+        # Pixels at [0, 0], [0, 1] and [1, 1] are not masked
         c_band0 = numpy.array([[8, 6], [3, 7]], dtype='uint16')
         c_band1 = numpy.array([[9, 1], [4, 4]], dtype='uint16')
         c_band2 = numpy.array([[3, 3], [5, 1]], dtype='uint16')
         c_alpha = numpy.array([[65535, 65535], [0, 65535]], dtype='uint16')
         candidate = gimage.GImage([c_band0, c_band1, c_band2], c_alpha, {})
 
-        golden_output_list = [{'coordinates': (0, 1),
-                               'weighting': 65535,
-                               'reference': [1, 7, 9],
-                               'candidate': [6, 1, 3]},
-                              {'coordinates': (1, 1),
-                               'weighting': 65535,
-                               'reference': [2, 6, 1],
-                               'candidate': [7, 4, 1]}]
+        golden_pif_weight = numpy.array([[0, 65535],
+                                        [0, 65535]], dtype='uint16')
 
-        test_output_list = pif._filter_zero_alpha_pifs(reference, candidate)
-        self.assertEqual(len(test_output_list), 2)
+        test_pif_weight = pif._filter_zero_alpha_pifs(reference, candidate)
 
-        for test_pif, golden_pif in zip(test_output_list, golden_output_list):
-            self.assertEqual(test_pif['coordinates'],
-                             golden_pif['coordinates'])
-            self.assertEqual(test_pif['weighting'],
-                             golden_pif['weighting'])
-            self.assertEqual(test_pif['reference'],
-                             golden_pif['reference'])
-            self.assertEqual(test_pif['candidate'],
-                             golden_pif['candidate'])
+        numpy.testing.assert_array_equal(test_pif_weight,
+                                         golden_pif_weight)
 
 
 if __name__ == '__main__':

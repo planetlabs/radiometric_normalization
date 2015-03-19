@@ -28,24 +28,25 @@ def generate(candidate_path, reference_path, method='identity'):
         method (str): Which psuedo invariant feature generation method to use
 
     Output:
-        pixel_pairs (list of pixel pair dict): Pixel pairs are
-            {'coordinates', (int, int),
-             'weighting', float,
-             'reference', list of numbers,
-             'candidate', list of numbers}
+        pif_weight (numpy uint16 array): A numpy array in the same coordinate
+            system of the candidate/reference image with a weight for how
+            a PIF the pixel is (0 for not a PIF)
     '''
     reference_img, candidate_img = _load_gimages(
         reference_path, candidate_path)
 
     if method == 'identity':
-        pixel_pairs = _filter_zero_alpha_pifs(reference_img, candidate_img)
+        pif_weight = _filter_zero_alpha_pifs(reference_img, candidate_img)
     else:
         raise NotImplementedError("Only 'identity' method is implemented.")
 
-    return pixel_pairs
+    return pif_weight, reference_img, candidate_img
 
 
 def _load_gimages(reference_path, candidate_path):
+    ''' Loads images into memory using the gimage structure
+    and checks the images are suitable.
+    '''
     reference_img = gimage.load(reference_path)
     candidate_img = gimage.load_candidate(candidate_path)
 
@@ -62,31 +63,21 @@ def _load_gimages(reference_path, candidate_path):
 def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
     ''' Creates the pseudo-invariant features from the reference and candidate
     gimages by filtering out pixels where either the candidate or mask alpha
-    value is zero (masked)'''
+    value is zero (masked)
+    '''
     all_mask = numpy.logical_not(numpy.logical_or(
         reference_gimage.alpha == 0, candidate_gimage.alpha == 0))
 
     valid_pixels = numpy.nonzero(all_mask)
 
-    def per_band_values(gimg, row, col):
-        return [band[row, col] for band in gimg.bands]
-
-    no_total_pixels = reference_gimage.bands[0].shape[0] * \
-        reference_gimage.bands[0].shape[1]
+    no_total_pixels = reference_gimage.bands[0].size
     no_valid_pixels = len(valid_pixels[0])
     valid_percent = 100 * no_valid_pixels / no_total_pixels
     logging.info('Found {} pifs out of {} pixels ({}%)'.format(
         no_valid_pixels, no_total_pixels, valid_percent))
 
-    pixel_pairs = []
-    for pixel in range(no_valid_pixels):
-        row = valid_pixels[0][pixel]
-        col = valid_pixels[1][pixel]
-        pixel_dict = {
-            'coordinates': (row, col),
-            'weighting': reference_gimage.alpha[row, col],
-            'reference': per_band_values(reference_gimage, row, col),
-            'candidate': per_band_values(candidate_gimage, row, col)}
-        pixel_pairs.append(pixel_dict)
+    pif_weight = numpy.zeros(reference_gimage.bands[0].shape,
+                             dtype=numpy.uint16)
+    pif_weight[valid_pixels] = reference_gimage.alpha[valid_pixels]
 
-    return pixel_pairs
+    return pif_weight
