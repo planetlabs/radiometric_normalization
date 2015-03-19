@@ -70,15 +70,14 @@ def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
 
     valid_pixels = numpy.nonzero(all_mask)
 
-    no_total_pixels = reference_gimage.bands[0].shape[0] * \
-        reference_gimage.bands[0].shape[1]
+    no_total_pixels = reference_gimage.bands[0].size
     no_valid_pixels = len(valid_pixels[0])
     valid_percent = 100 * no_valid_pixels / no_total_pixels
     logging.info('Found {} pifs out of {} pixels ({}%)'.format(
         no_valid_pixels, no_total_pixels, valid_percent))
 
     pif_weight = numpy.zeros(reference_gimage.bands[0].shape,
-                             dtype=reference_gimage.bands[0].dtype)
+                             dtype=numpy.uint16)
     pif_weight[valid_pixels] = reference_gimage.alpha[valid_pixels]
 
     return pif_weight
