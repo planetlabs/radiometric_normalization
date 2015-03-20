@@ -71,15 +71,6 @@ def save_to_ds(gimage, gdal_ds, nodata=None):
         gdal_ds.SetMetadata(gimage.metadata['rpc'], 'RPC')
 
 
-def load_candidate(filename):
-    tmp_img = load(filename)
-
-    logging.debug("Candidate image: moving last band to alpha band.")
-    bands = tmp_img.bands[:-1]
-    alpha = tmp_img.bands[-1]
-    return GImage(bands, alpha, tmp_img.metadata)
-
-
 def load(filename, nodata=None):
     logging.debug("Loading {} as GImage.".format(filename))
     gdal_ds = gdal.Open(filename)
