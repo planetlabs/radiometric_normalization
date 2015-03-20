@@ -11,7 +11,7 @@ This library uses a Vagrant VM for the development environment and requires [Vag
 To start the VM, in the root directory of the repo type:
 ```
 vagrant up
-``
+```
 
 Log into the VM by typing:
 ```
