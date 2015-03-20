@@ -33,7 +33,7 @@ def generate(candidate_path, reference_path, method='identity'):
             a PIF the pixel is (0 for not a PIF)
     '''
     reference_img = gimage.load(reference_path)
-    candidate_img = gimage.load_candidate(candidate_path)
+    candidate_img = gimage.load(candidate_path)
 
     if method == 'identity':
         pif_weight = _filter_zero_alpha_pifs(reference_img, candidate_img)
