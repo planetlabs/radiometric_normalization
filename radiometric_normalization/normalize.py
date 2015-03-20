@@ -39,4 +39,4 @@ def generate_transforms(candidate_path, reference_paths, config=None):
 def apply_transforms(input_path, transformations, output_path):
     gimg = gimage.load(input_path)
     out_gimg = transformation.apply(gimg, transformations)
-    out_gimg.save(output_path)
+    gimage.save(out_gimg, output_path)
