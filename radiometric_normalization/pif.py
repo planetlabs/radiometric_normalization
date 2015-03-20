@@ -48,7 +48,7 @@ def _load_gimages(reference_path, candidate_path):
     and checks the images are suitable.
     '''
     reference_img = gimage.load(reference_path)
-    candidate_img = gimage.load_candidate(candidate_path)
+    candidate_img = gimage.load(candidate_path)
 
     assert len(reference_img.bands) == len(candidate_img.bands), \
         '{} and {} have different number of bands: {} / {}'.format(
