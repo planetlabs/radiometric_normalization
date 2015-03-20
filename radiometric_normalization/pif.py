@@ -32,8 +32,8 @@ def generate(candidate_path, reference_path, method='identity'):
             system of the candidate/reference image with a weight for how
             a PIF the pixel is (0 for not a PIF)
     '''
-    reference_img, candidate_img = _load_gimages(
-        reference_path, candidate_path)
+    reference_img = gimage.load(reference_path)
+    candidate_img = gimage.load_candidate(candidate_path)
 
     if method == 'identity':
         pif_weight = _filter_zero_alpha_pifs(reference_img, candidate_img)
@@ -43,28 +43,13 @@ def generate(candidate_path, reference_path, method='identity'):
     return pif_weight, reference_img, candidate_img
 
 
-def _load_gimages(reference_path, candidate_path):
-    ''' Loads images into memory using the gimage structure
-    and checks the images are suitable.
-    '''
-    reference_img = gimage.load(reference_path)
-    candidate_img = gimage.load_candidate(candidate_path)
-
-    assert len(reference_img.bands) == len(candidate_img.bands), \
-        '{} and {} have different number of bands: {} / {}'.format(
-            candidate_path, reference_path,
-            len(candidate_img.bands), len(reference_img.bands))
-    assert reference_img.bands[0].shape == reference_img.bands[0].shape, \
-        '{} and {} have different shapes'.format(
-            candidate_path, reference_path)
-    return (reference_img, candidate_img)
-
-
 def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
     ''' Creates the pseudo-invariant features from the reference and candidate
     gimages by filtering out pixels where either the candidate or mask alpha
     value is zero (masked)
     '''
+    gimage.check_comparable([reference_gimage, candidate_gimage])
+
     all_mask = numpy.logical_not(numpy.logical_or(
         reference_gimage.alpha == 0, candidate_gimage.alpha == 0))
 

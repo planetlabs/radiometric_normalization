@@ -108,6 +108,24 @@ class Tests(unittest.TestCase):
 
         os.unlink(output_file)
 
+    def test_check_comparable(self):
+        band1 = numpy.ones([2, 2])
+        metadata = {'dummy_key': 'dummy_var'}
+        one_band_gimage = gimage.GImage([band1], None, None)
+
+        two_band_gimage = gimage.GImage([band1, band1], None, None)
+        self.assertRaises(
+            Exception,
+            gimage.check_comparable,
+            [one_band_gimage, two_band_gimage])
+
+        one_band_gimage_with_metadata = gimage.GImage(
+            [band1], None, metadata)
+        self.assertRaises(
+            Exception,
+            gimage.check_comparable,
+            [one_band_gimage, one_band_gimage_with_metadata],
+            check_metadata=True)
 
 if __name__ == '__main__':
     unittest.main()

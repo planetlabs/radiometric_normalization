@@ -153,3 +153,32 @@ def _nodata_to_mask(bands, nodata):
     for band in bands:
         alpha[band == nodata] = 0
     return alpha
+
+
+def check_comparable(gimages, check_metadata=False):
+    '''Checks that the gimages have the same number of bands, band dimensions,
+    and, optionally, geospatial metadata'''
+
+    no_bands = len(gimages[0].bands)
+    band_shape = gimages[0].bands[0].shape
+    metadata = gimages[0].metadata
+
+    logging.debug('Initial image - band number, band shape: {}, {}'.format(
+        no_bands, band_shape))
+    logging.debug('Initial image metadata: '.format(metadata))
+
+    for i, image in enumerate(gimages[1:]):
+        if len(image.bands) != no_bands:
+            raise Exception(
+                'Image {} has a different number of bands: ' +
+                '{} (initial: {})'.format(i + 1, len(image.bands), no_bands))
+
+        if image.bands[0].shape != band_shape:
+            raise Exception(
+                'Image {} has a different band shape: {} (initial: {})'.format(
+                    i + 1, image.bands[0].shape, band_shape))
+
+        if check_metadata and image.metadata != metadata:
+            raise Exception(
+                'Image {} has different geographic metadata: {} ' +
+                '(initial: {})'.format(i + 1, image.metadata, metadata))
