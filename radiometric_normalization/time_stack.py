@@ -139,7 +139,7 @@ def _uniform_weight_alpha(all_masks, output_datatype):
     return output_alpha
 
 
-def _mean_with_uniform_weight(all_gimages, output_datatype):
+def mean_with_uniform_weight(all_gimages, output_datatype):
     ''' Calculates the reference as the mean of each band with uniform
     weighting (zero for nodata pixels, 2 ** 16 - 1 for valid pixels)
 
