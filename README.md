@@ -1,6 +1,6 @@
 # Radiometric Normalization #
 
-This library implements functionality for normalizing a candidate image to time-invariant features in a set of reference images covering a time series. This includes generating a time-invariant reference image from a time stack, identifying features that are invariante between the reference time stack and a candidate image, calculating a linear transformation that normalizes the candidate image to the reference image, applying the linear transform, and validating the results.
+This library implements functionality for normalizing a candidate image to time-invariant features in a set of reference images covering a time series.  This includes generating a time-invariant reference image from a time stack, identifying features that are invariante between the reference time stack and a candidate image, calculating a linear transformation that normalizes the candidate image to the reference image, applying the linear transform, and validating the results.
 
 The primary use case for this library is radiometrically normalizing a satellite image to a time series from a reference dataset.
 
