@@ -13,6 +13,7 @@ TOP=$(cd $(dirname $0) && pwd)
 set -o errexit
 set -o xtrace
 
+sudo apt-get update
 sudo apt-get install -y --force-yes python-software-properties
 sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
 
