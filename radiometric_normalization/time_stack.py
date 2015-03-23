@@ -47,7 +47,9 @@ def generate(image_paths, output_path, method='identity', image_nodata=None):
 
     output_datatype = numpy.uint16
 
-    all_gimages = _load_all_gimages(image_paths, image_nodata)
+    all_gimages = [gimage.load(image_path, image_nodata)
+                   for image_path in image_paths]
+
     if method == 'identity':
         output_gimage = _mean_with_uniform_weight(
             all_gimages, output_datatype)
@@ -55,37 +57,6 @@ def generate(image_paths, output_path, method='identity', image_nodata=None):
         raise NotImplementedError("Only 'identity' method is implemented")
 
     gimage.save(output_gimage, output_path)
-
-
-def _load_all_gimages(image_paths, image_nodata):
-    ''' Reads in a list of image paths and outputs a list of numpy arrays
-    representing the bands.
-
-    Input:
-        image_paths (list of str): A list of the input file paths
-
-    Output:
-        all_gimages (list of gimages): A list of all the images loaded into
-            memory as gimages
-    '''
-
-    test_gimage = gimage.load(image_paths.pop(0), image_nodata)
-    all_gimages = [test_gimage]
-    for image_path in image_paths:
-        current_gimage = gimage.load(image_path, image_nodata)
-        assert len(current_gimage.bands) == len(test_gimage.bands), \
-            '{} and {} have different number of bands: {} / {}'.format(
-                image_path, image_paths[0],
-                len(current_gimage.bands), len(test_gimage.bands))
-        assert current_gimage.bands[0].shape == test_gimage.bands[0].shape, \
-            '{} and {} have different shapes'.format(
-                image_path, image_paths[0])
-        assert current_gimage.metadata == test_gimage.metadata, \
-            '{} and {} have different geographic metadata'.format(
-                image_path, image_paths[0])
-        all_gimages.append(current_gimage)
-
-    return all_gimages
 
 
 def _mean_one_band(all_gimages, band_index, output_datatype):
@@ -156,6 +127,7 @@ def mean_with_uniform_weight(all_gimages, output_datatype):
     '''
 
     logging.info('Time stack analysis is using: Mean with uniform weight.')
+    gimage.check_comparable(all_gimages, check_metadata=True)
 
     no_bands = len(all_gimages[0].bands)
     all_means = []
