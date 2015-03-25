@@ -17,7 +17,8 @@ from radiometric_normalization import \
     time_stack, pif, transformation, gimage
 
 
-def generate_transformations(candidate_path, reference_paths, config=None):
+def generate_transformations(candidate_path, reference_paths,
+                             config=None, pif_path=None):
     if config is None:
         config = {'time_stack_method': 'identity',
                   'pif_method': 'identity',
@@ -49,11 +50,19 @@ def generate_transformations(candidate_path, reference_paths, config=None):
             candidate_path, reference_path=reference_image,
             method=config['pif_method'])
     else:
-        # Assumes that the reference_paths is an image with the pif strength
-        # weightings as the alpha band
-        reference_gimg = gimage.load(reference_image)
-        candidate_gimg = gimage.load(candidate_path)
-        pif_weight = reference_gimg.alpha
+        # Assumes that the PIF image is a geotiff with one band that repesents
+        # the PIF weight.
+        if pif_path is not None:
+            reference_gimg = gimage.load(reference_image)
+            candidate_gimg = gimage.load(candidate_path)
+            pif_gimg = gimage.load(pif_path)
+            if len(pif_gimg.bands) == 1:
+                pif_weight = pif_gimg.band[0]
+            else:
+                raise NotImplementedError("The PIF weight image is not in an "
+                                          "expected format")
+        else:
+            raise NotImplementedError("No PIF weight image specified.")
 
     if config['transformation_method'] != 'skip':
         transformations = transformation.generate(
