@@ -43,13 +43,12 @@ def generate_transforms(candidate_path, reference_paths, config=None):
 
     if config['pif_method'] != 'skip':
         pif_weight, reference_gimg, candidate_gimg = pif.generate(
-            candidate_path, reference_path=reference_image,
+            candidate_path, reference_image,
             method=config['pif_method'])
     else:
         # Assumes that the reference_paths is an image with the pif strength
-        # weightings as the alpha band (reference_paths is a single file name
-        # NOT a list of file names)
-        reference_gimg = gimage.load(reference_paths)
+        # weightings as the alpha band
+        reference_gimg = gimage.load(reference_image)
         candidate_gimg = gimage.load(candidate_path)
         pif_weight = reference_gimg.alpha
 
@@ -60,7 +59,9 @@ def generate_transforms(candidate_path, reference_paths, config=None):
     else:
         # Nothing really makes sense here, so just output an identity
         # transformation and ignore all inputs
-        transformations = transformation.LinearTransformation(1.0, 0.0)
+        no_bands = len(reference_gimg.bands)
+        transformations = [transformation.LinearTransformation(1.0, 0.0) for
+                           band_count in xrange(no_bands)]
 
     return transformations
 
