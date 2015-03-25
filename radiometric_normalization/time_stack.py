@@ -51,7 +51,7 @@ def generate(image_paths, output_path, method='identity', image_nodata=None):
                    for image_path in image_paths]
 
     if method == 'identity':
-        output_gimage = _mean_with_uniform_weight(
+        output_gimage = mean_with_uniform_weight(
             all_gimages, output_datatype)
     else:
         raise NotImplementedError("Only 'identity' method is implemented")
