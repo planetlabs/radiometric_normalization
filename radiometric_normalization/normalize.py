@@ -17,7 +17,7 @@ from radiometric_normalization import \
     time_stack, pif, transformation, gimage
 
 
-def generate_transforms(candidate_path, reference_paths, config=None):
+def generate_transformations(candidate_path, reference_paths, config=None):
     if config is None:
         config = {'time_stack_method': 'identity',
                   'pif_method': 'identity',
@@ -66,7 +66,7 @@ def generate_transforms(candidate_path, reference_paths, config=None):
     return transformations
 
 
-def apply_transforms(input_path, transformations, output_path):
+def apply_transformations(input_path, transformations, output_path):
     gimg = gimage.load(input_path)
     out_gimg = transformation.apply(gimg, transformations)
     gimage.save(out_gimg, output_path)
