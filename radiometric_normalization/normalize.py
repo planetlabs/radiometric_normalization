@@ -31,16 +31,37 @@ def generate_transforms(candidate_path, reference_paths, config=None):
     if 'transformation_method' not in config:
         config['transformation_method'] = 'linear_relationship'
 
-    reference_image = time_stack.generate(
-        reference_paths,
-        method=config['time_stack_method'])
+    if config['time_stack_method'] != 'skip':
+        reference_image = time_stack.generate(
+            reference_paths,
+            method=config['time_stack_method'])
+    else:
+        # Assumes that the reference_paths is a pre-made time stack or
+        # another compatible image
+        # i.e. it is a single file name NOT a list of file names
+        reference_image = reference_paths
 
-    pif_weight, reference_img, candidate_img = pif.generate(
-        candidate_path, reference_path=reference_image,
-        method=config['pif_method'])
-    transformations = transformation.generate(
-        pif_weight, reference_img, candidate_img,
-        method=config['transformation_method'])
+    if config['pif_method'] != 'skip':
+        pif_weight, reference_gimg, candidate_gimg = pif.generate(
+            candidate_path, reference_path=reference_image,
+            method=config['pif_method'])
+    else:
+        # Assumes that the reference_paths is an image with the pif strength
+        # weightings as the alpha band (reference_paths is a single file name
+        # NOT a list of file names)
+        reference_gimg = gimage.load(reference_paths)
+        candidate_gimg = gimage.load(candidate_path)
+        pif_weight = reference_gimg.alpha
+
+    if config['transformation_method'] != 'skip':
+        transformations = transformation.generate(
+            pif_weight, reference_gimg, candidate_gimg,
+            method=config['transformation_method'])
+    else:
+        # Nothing really makes sense here, so just output an identity
+        # transformation and ignore all inputs
+        transformations = transformation.LinearTransformation(1.0, 0.0)
+
     return transformations
 
 
