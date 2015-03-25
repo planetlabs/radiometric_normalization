@@ -23,6 +23,14 @@ def generate_transforms(candidate_path, reference_paths, config=None):
                   'pif_method': 'identity',
                   'transformation_method': 'linear_relationship'}
 
+    # Ensure all entries are there for partial configs
+    if 'time_stack_method' not in config:
+        config['time_stack_method'] = 'identity'
+    if 'pif_method' not in config:
+        config['pif_method'] = 'identity'
+    if 'transformation_method' not in config:
+        config['transformation_method'] = 'linear_relationship'
+
     reference_image = time_stack.generate(
         reference_paths,
         method=config['time_stack_method'])
