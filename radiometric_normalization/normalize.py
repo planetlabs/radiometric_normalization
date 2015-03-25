@@ -37,9 +37,12 @@ def generate_transformations(candidate_path, reference_paths, config=None):
             method=config['time_stack_method'])
     else:
         # Assumes that the reference_paths is a pre-made time stack or
-        # another compatible image
-        # i.e. it is a single file name NOT a list of file names
-        reference_image = reference_paths
+        # another compatible image (it needs to be a list of length one).
+        if len(reference_paths) == 1:
+            reference_image = reference_paths[0]
+        else:
+            raise NotImplementedError("If time stack generation is skipped, "
+                                      "only one reference image is expected.")
 
     if config['pif_method'] != 'skip':
         pif_weight, reference_gimg, candidate_gimg = pif.generate(
