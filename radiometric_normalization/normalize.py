@@ -17,26 +17,68 @@ from radiometric_normalization import \
     time_stack, pif, transformation, gimage
 
 
-def generate_transforms(candidate_path, reference_paths, config=None):
+def generate_transformations(candidate_path, reference_paths,
+                             config=None, pif_path=None):
     if config is None:
         config = {'time_stack_method': 'identity',
                   'pif_method': 'identity',
                   'transformation_method': 'linear_relationship'}
 
-    reference_image = time_stack.generate(
-        reference_paths,
-        method=config['time_stack_method'])
+    # Ensure all entries are there for partial configs
+    if 'time_stack_method' not in config:
+        config['time_stack_method'] = 'identity'
+    if 'pif_method' not in config:
+        config['pif_method'] = 'identity'
+    if 'transformation_method' not in config:
+        config['transformation_method'] = 'linear_relationship'
 
-    pif_weight, reference_img, candidate_img = pif.generate(
-        candidate_path, reference_path=reference_image,
-        method=config['pif_method'])
-    transformations = transformation.generate(
-        pif_weight, reference_img, candidate_img,
-        method=config['transformation_method'])
+    if config['time_stack_method'] != 'skip':
+        reference_image = time_stack.generate(
+            reference_paths, 'time_stack.tif',
+            method=config['time_stack_method'])
+    else:
+        # Assumes that the reference_paths is a pre-made time stack or
+        # another compatible image (it needs to be a list of length one).
+        if len(reference_paths) == 1:
+            reference_image = reference_paths[0]
+        else:
+            raise NotImplementedError("If time stack generation is skipped, "
+                                      "only one reference image is expected.")
+
+    if config['pif_method'] != 'skip':
+        pif_weight, reference_gimg, candidate_gimg = pif.generate(
+            candidate_path, reference_path=reference_image,
+            method=config['pif_method'])
+    else:
+        # Assumes that the PIF image is a geotiff with one band that repesents
+        # the PIF weight.
+        if pif_path is not None:
+            reference_gimg = gimage.load(reference_image)
+            candidate_gimg = gimage.load(candidate_path)
+            pif_gimg = gimage.load(pif_path)
+            if len(pif_gimg.bands) == 1:
+                pif_weight = pif_gimg.band[0]
+            else:
+                raise NotImplementedError("The PIF weight image is not in an "
+                                          "expected format")
+        else:
+            raise NotImplementedError("No PIF weight image specified.")
+
+    if config['transformation_method'] != 'skip':
+        transformations = transformation.generate(
+            pif_weight, reference_gimg, candidate_gimg,
+            method=config['transformation_method'])
+    else:
+        # Nothing really makes sense here, so just output an identity
+        # transformation and ignore all inputs
+        no_bands = len(reference_gimg.bands)
+        transformations = [transformation.LinearTransformation(1.0, 0.0) for
+                           band_count in xrange(no_bands)]
+
     return transformations
 
 
-def apply_transforms(input_path, transformations, output_path):
+def apply_transformations(input_path, transformations, output_path):
     gimg = gimage.load(input_path)
     out_gimg = transformation.apply(gimg, transformations)
     gimage.save(out_gimg, output_path)

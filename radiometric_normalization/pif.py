@@ -48,6 +48,10 @@ def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
     gimages by filtering out pixels where either the candidate or mask alpha
     value is zero (masked)
     '''
+
+    logging.info('Pseudo invariant feature generation is using: Filtering '
+                 'using the alpha mask.')
+
     gimage.check_comparable([reference_gimage, candidate_gimage])
 
     all_mask = numpy.logical_not(numpy.logical_or(
