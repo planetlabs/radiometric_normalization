@@ -32,9 +32,7 @@ def generate(candidate_path, reference_path, method='identity'):
             system of the candidate/reference image with a weight for how
             a PIF the pixel is (0 for not a PIF)
     '''
-    logging.info('Pseudo invariant feature generation is using: Filtering ',
-                 'using the alpha mask.')
-    logging.info('Pseudo invariant feature generation is using: Filtering ',
+    logging.info('Pseudo invariant feature generation is using: Filtering '
                  'using the alpha mask.')
 
     reference_img = gimage.load(reference_path)
@@ -54,7 +52,7 @@ def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
     value is zero (masked)
     '''
 
-    logging.info('Pseudo invariant feature generation is using: Filtering ',
+    logging.info('Pseudo invariant feature generation is using: Filtering '
                  'using the alpha mask.')
 
     gimage.check_comparable([reference_gimage, candidate_gimage])
