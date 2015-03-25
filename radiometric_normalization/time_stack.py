@@ -58,6 +58,8 @@ def generate(image_paths, output_path, method='identity', image_nodata=None):
 
     gimage.save(output_gimage, output_path)
 
+    return output_path
+
 
 def _mean_one_band(all_gimages, band_index, output_datatype):
     ''' Calculates the reference as the mean of each band with uniform

@@ -33,7 +33,7 @@ def generate_transforms(candidate_path, reference_paths, config=None):
 
     if config['time_stack_method'] != 'skip':
         reference_image = time_stack.generate(
-            reference_paths,
+            reference_paths, 'time_stack.tif',
             method=config['time_stack_method'])
     else:
         # Assumes that the reference_paths is a pre-made time stack or
@@ -43,7 +43,7 @@ def generate_transforms(candidate_path, reference_paths, config=None):
 
     if config['pif_method'] != 'skip':
         pif_weight, reference_gimg, candidate_gimg = pif.generate(
-            candidate_path, reference_image,
+            candidate_path, reference_path=reference_image,
             method=config['pif_method'])
     else:
         # Assumes that the reference_paths is an image with the pif strength
