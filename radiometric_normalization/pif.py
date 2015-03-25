@@ -32,9 +32,6 @@ def generate(candidate_path, reference_path, method='identity'):
             system of the candidate/reference image with a weight for how
             a PIF the pixel is (0 for not a PIF)
     '''
-    logging.info('Pseudo invariant feature generation is using: Filtering '
-                 'using the alpha mask.')
-
     reference_img = gimage.load(reference_path)
     candidate_img = gimage.load(candidate_path)
 
