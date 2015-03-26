@@ -14,26 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 from radiometric_normalization import \
-    time_stack, pif, transformation, gimage
-
-
-def generate_transforms(candidate_path, reference_paths, config=None):
-    if config is None:
-        config = {'time_stack_method': 'identity',
-                  'pif_method': 'identity',
-                  'transformation_method': 'linear_relationship'}
-
-    reference_image = time_stack.generate(
-        reference_paths,
-        method=config['time_stack_method'])
-
-    pif_weight, reference_img, candidate_img = pif.generate(
-        candidate_path, reference_path=reference_image,
-        method=config['pif_method'])
-    transformations = transformation.generate(
-        pif_weight, reference_img, candidate_img,
-        method=config['transformation_method'])
-    return transformations
+    transformation, gimage
 
 
 def apply_transforms(input_path, transformations, output_path):
