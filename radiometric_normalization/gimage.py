@@ -161,7 +161,7 @@ def check_comparable(gimages, check_metadata=False):
     for i, image in enumerate(gimages[1:]):
         if len(image.bands) != no_bands:
             raise Exception(
-                'Image {} has a different number of bands: ' +
+                'Image {} has a different number of bands: '
                 '{} (initial: {})'.format(i + 1, len(image.bands), no_bands))
 
         if image.bands[0].shape != band_shape:
@@ -171,5 +171,5 @@ def check_comparable(gimages, check_metadata=False):
 
         if check_metadata and image.metadata != metadata:
             raise Exception(
-                'Image {} has different geographic metadata: {} ' +
+                'Image {} has different geographic metadata: {} '
                 '(initial: {})'.format(i + 1, image.metadata, metadata))
