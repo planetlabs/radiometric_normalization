@@ -17,7 +17,11 @@ from radiometric_normalization import \
     transformation, gimage
 
 
-def apply_transforms(input_path, transformations, output_path):
+def apply_transformations(input_path, transformations, output_path):
+    ''' This wrapper function applies the transformations
+    derived by the library onto two files.
+    '''
+
     gimg = gimage.load(input_path)
     out_gimg = transformation.apply(gimg, transformations)
     gimage.save(out_gimg, output_path)
