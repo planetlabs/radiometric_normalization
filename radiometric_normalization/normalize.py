@@ -14,29 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 from radiometric_normalization import \
-    time_stack, pif, transformation, gimage
+    transformation, gimage
 
 
-def generate_transforms(candidate_path, reference_paths, config=None):
-    if config is None:
-        config = {'time_stack_method': 'identity',
-                  'pif_method': 'identity',
-                  'transformation_method': 'linear_relationship'}
+def apply_transformations(input_path, transformations, output_path):
+    ''' This wrapper function applies the transformations
+    derived by the library onto two files.
+    '''
 
-    reference_image = time_stack.generate(
-        reference_paths,
-        method=config['time_stack_method'])
-
-    pif_weight, reference_img, candidate_img = pif.generate(
-        candidate_path, reference_path=reference_image,
-        method=config['pif_method'])
-    transformations = transformation.generate(
-        pif_weight, reference_img, candidate_img,
-        method=config['transformation_method'])
-    return transformations
-
-
-def apply_transforms(input_path, transformations, output_path):
     gimg = gimage.load(input_path)
     out_gimg = transformation.apply(gimg, transformations)
     gimage.save(out_gimg, output_path)
