@@ -19,7 +19,7 @@ import numpy
 from radiometric_normalization import gimage
 
 
-def generate(candidate_path, reference_path, method='identity'):
+def generate(candidate_path, reference_path, method='filter_nodata'):
     ''' Generates psuedo invariant features as a list of pixel pairs
 
     Input:
@@ -36,10 +36,10 @@ def generate(candidate_path, reference_path, method='identity'):
     reference_img = gimage.load(reference_path)
     candidate_img = gimage.load(candidate_path)
 
-    if method == 'identity':
+    if method == 'filter_nodata':
         pif_weight = _filter_zero_alpha_pifs(reference_img, candidate_img)
     else:
-        raise NotImplementedError("Only 'identity' method is implemented.")
+        raise NotImplementedError("Only 'filter_nodata' method is implemented.")
 
     return pif_weight, reference_img, candidate_img
 

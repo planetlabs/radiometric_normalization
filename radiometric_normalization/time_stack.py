@@ -23,7 +23,7 @@ import logging
 from radiometric_normalization import gimage
 
 
-def generate(image_paths, output_path, method='identity', image_nodata=None):
+def generate(image_paths, output_path, method='mean_with_uniform_weight', image_nodata=None):
     '''Synthesizes a time stack image set into a single reference image.
 
     All images in time stack must:
@@ -50,11 +50,11 @@ def generate(image_paths, output_path, method='identity', image_nodata=None):
     all_gimages = [gimage.load(image_path, image_nodata)
                    for image_path in image_paths]
 
-    if method == 'identity':
+    if method == 'mean_with_uniform_weight':
         output_gimage = mean_with_uniform_weight(
             all_gimages, output_datatype)
     else:
-        raise NotImplementedError("Only 'identity' method is implemented")
+        raise NotImplementedError("Only 'mean_with_uniform_weight' method is implemented")
 
     gimage.save(output_gimage, output_path)
 
