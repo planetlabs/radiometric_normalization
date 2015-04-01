@@ -20,7 +20,7 @@ from radiometric_normalization import time_stack, gimage
 
 
 class Tests(unittest.TestCase):
-    def test__mean_with_uniform_weight(self):
+    def test_mean_with_uniform_weight(self):
         # Three images of three bands of 2 by 2 pixels
         gimage_one = gimage.GImage(
             [numpy.array([[4, 1],
@@ -61,7 +61,7 @@ class Tests(unittest.TestCase):
             numpy.array([[65535, 0],
                          [65535, 65535]], dtype='uint16'), {})
 
-        output_gimage = time_stack._mean_with_uniform_weight(all_gimages,
+        output_gimage = time_stack.mean_with_uniform_weight(all_gimages,
                                                              numpy.uint16)
 
         for band in range(3):
