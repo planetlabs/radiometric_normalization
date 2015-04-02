@@ -49,11 +49,11 @@ The example below demonstrates the generation of per-band linear transformations
 
 reference_image = time_stack.generate(
     reference_paths,
-    method='identity')
+    method='mean_with_uniform_weight')
 
 pif_weight, reference_img, candidate_img = pif.generate(
     candidate_path, reference_path=reference_image,
-    method='identity')
+    method='filter_nodata')
 
 transformations = transformation.generate(
     pif_weight, reference_img, candidate_img,
