@@ -15,6 +15,7 @@ limitations under the License.
 '''
 import unittest
 import numpy
+import os
 
 from radiometric_normalization import time_stack, gimage
 
@@ -49,7 +50,10 @@ class Tests(unittest.TestCase):
                           [3, 2]], dtype='uint16')],
             numpy.array([[65535, 0], [65535, 0]], dtype='uint16'), {})
 
-        all_gimages = [gimage_one, gimage_two, gimage_three]
+        gimage.save(gimage_one, 'gimage_one.tif')
+        gimage.save(gimage_two, 'gimage_two.tif')
+        gimage.save(gimage_three, 'gimage_three.tif')
+        image_paths = ['gimage_one.tif', 'gimage_two.tif', 'gimage_three.tif']
 
         golden_output = gimage.GImage(
             [numpy.array([[4, 0],
@@ -59,85 +63,230 @@ class Tests(unittest.TestCase):
              numpy.array([[4, 0],
                           [5, 2]], dtype='uint16')],
             numpy.array([[65535, 0],
-                         [65535, 65535]], dtype='uint16'), {})
+                         [65535, 65535]], dtype='uint16'),
+            {'geotransform': (0.0, 1.0, 0.0, 0.0, 0.0, 1.0)})
 
-        output_gimage = time_stack.mean_with_uniform_weight(all_gimages,
-                                                             numpy.uint16)
+        output_gimage = time_stack.mean_with_uniform_weight(image_paths,
+                                                            numpy.uint16)
 
         for band in range(3):
-            self.assertEqual(output_gimage.bands[band].all(),
-                             golden_output.bands[band].all())
-        self.assertEqual(output_gimage.alpha.all(),
-                         golden_output.alpha.all())
+            numpy.testing.assert_array_equal(output_gimage.bands[band],
+                                             golden_output.bands[band])
+        numpy.testing.assert_array_equal(output_gimage.alpha,
+                                         golden_output.alpha)
         self.assertEqual(output_gimage.metadata,
                          golden_output.metadata)
 
-    def test__mean_one_band(self):
-        # Four images of two bands of 2 by 2 pixels
-        gimage_one = gimage.GImage(
-            [numpy.array([[0, 0],
-                          [0, 0]], dtype='uint16'),
-             numpy.array([[1, 7],
-                          [2, 6]], dtype='uint16')],
-            numpy.array([[0, 65535], [65535, 0]], dtype='uint16'), {})
+        for image in image_paths:
+            os.unlink(image)
 
-        gimage_two = gimage.GImage(
-            [numpy.array([[0, 0],
-                          [0, 0]], dtype='uint16'),
-             numpy.array([[9, 2],
-                          [2, 8]], dtype='uint16')],
-            numpy.array([[0, 65535], [65535, 65535]], dtype='uint16'), {})
+    def test__sum_masked_array_list(self):
+        # Two masked_arrays with two bands of 2 by 2 pixels
+        band_one_1 = numpy.ma.masked_array(numpy.array([[1, 2],[5, 1]],
+                                                       dtype='uint16'),
+                                           mask=numpy.array([[False, True],
+                                                             [False, False]],
+                                                            dtype='bool'))
 
-        gimage_three = gimage.GImage(
-            [numpy.array([[0, 0],
-                          [0, 0]], dtype='uint16'),
-             numpy.array([[6, 8],
-                          [4, 9]], dtype='uint16')],
-            numpy.array([[0, 65535], [65535, 0]], dtype='uint16'), {})
+        band_two_1 = numpy.ma.masked_array(numpy.array([[9, 2],[3, 6]],
+                                                       dtype='uint16'),
+                                           mask=numpy.array([[False, False],
+                                                             [False, False]],
+                                                            dtype='bool'))
 
-        gimage_four = gimage.GImage(
-            [numpy.array([[0, 0],
-                          [0, 0]], dtype='uint16'),
-             numpy.array([[8, 4],
-                          [6, 2]], dtype='uint16')],
-            numpy.array([[0, 0], [65535, 65535]], dtype='uint16'), {})
+        band_one_2 = numpy.ma.masked_array(numpy.array([[6, 3],[7, 8]],
+                                                       dtype='uint16'),
+                                           mask=numpy.array([[True, True],
+                                                             [False, False]],
+                                                            dtype='bool'))
 
-        all_gimages = [gimage_one, gimage_two, gimage_three, gimage_four]
+        band_two_2 = numpy.ma.masked_array(numpy.array([[8, 9],[3, 4]],
+                                                       dtype='uint16'),
+                                           mask=numpy.array([[True, True],
+                                                             [False, True]],
+                                                            dtype='bool'))
 
-        golden_mean = numpy.array([[0, 5],
-                                   [3, 5]], dtype='uint16')
-        golden_mask = numpy.array([[False, True],
-                                   [True, True]], dtype='bool')
+        sum_masked_array = [band_one_1, band_two_1]
+        new_masked_array = [band_one_2, band_two_2]
+        frequency_array = [numpy.array([[1, 0], [1, 1]]),
+                           numpy.array([[1, 1], [1, 1]])]
 
-        band_mean, band_mask = time_stack._mean_one_band(all_gimages, 1,
-                                                         numpy.uint16)
+        golden_band_one = numpy.ma.masked_array(numpy.array([[1, 0],[12, 9]],
+                                                            dtype='uint16'),
+                                                mask=numpy.array([[False, True],
+                                                                  [False, False]],
+                                                                 dtype='bool'))
 
-        self.assertEqual(band_mean.all(),
-                         golden_mean.all())
-        self.assertEqual(band_mask.all(),
-                         golden_mask.all())
+        golden_band_two = numpy.ma.masked_array(numpy.array([[9, 2],[6, 6]],
+                                                            dtype='uint16'),
+                                                mask=numpy.array([[False, False],
+                                                                  [False, False]],
+                                                                 dtype='bool'))
+
+        golden_sum_masked_array = [golden_band_one, golden_band_two]
+        golden_frequency_array = [numpy.array([[1, 0], [2, 2]]),
+                                  numpy.array([[1, 1], [2, 1]])]
+
+        sum_masked_array_output, frequency_array_output = \
+            time_stack._sum_masked_array_list(sum_masked_array,
+                                              frequency_array,
+                                              new_masked_array)
+
+        numpy.testing.assert_array_equal(sum_masked_array_output[0],
+                                         golden_sum_masked_array[0])
+        numpy.testing.assert_array_equal(sum_masked_array_output[1],
+                                         golden_sum_masked_array[1])
+        numpy.testing.assert_array_equal(frequency_array_output,
+                                         golden_frequency_array)
+
+    def test__masked_arrays_from_gimg(self):
+        # Gimages of four bands of 3 by 3 pixels
+        test_gimage = gimage.GImage(
+            [numpy.array([[5, 9, 6],
+                          [1, 2, 7],
+                          [6, 2, 3]], dtype='uint16'),
+             numpy.array([[3, 1, 8],
+                          [2, 3, 9],
+                          [1, 7, 1]], dtype='uint16'),
+             numpy.array([[6, 6, 3],
+                          [7, 2, 7],
+                          [8, 2, 2]], dtype='uint16')],
+            numpy.array([[65535, 0, 65535],
+                         [65535, 65535, 65535],
+                         [0, 65535, 65535]], dtype='uint16'), {})
+
+        golden_masked_array_list = \
+            [numpy.ma.masked_array(numpy.array([[5, 9, 6],
+                                                [1, 2, 7],
+                                                [6, 2, 3]], dtype='double'),
+                                   mask=numpy.array([[False, True, False],
+                                                     [False, False, False],
+                                                     [True, False, False]],
+                                                    dtype='bool')),
+             numpy.ma.masked_array(numpy.array([[3, 1, 8],
+                                                [2, 3, 9],
+                                                [1, 7, 1]], dtype='double'),
+                                   mask=numpy.array([[False, True, False],
+                                                     [False, False, False],
+                                                     [True, False, False]],
+                                                    dtype='bool')),
+             numpy.ma.masked_array(numpy.array([[6, 6, 3],
+                                                [7, 2, 7],
+                                                [8, 2, 2]], dtype='double'),
+                                   mask=numpy.array([[False, True, False],
+                                                     [False, False, False],
+                                                     [True, False, False]],
+                                                    dtype='bool'))]
+
+        masked_array_list = time_stack._masked_arrays_from_gimg(test_gimage,
+                                                                numpy.double)
+
+        numpy.testing.assert_array_equal(masked_array_list[0],
+                                         golden_masked_array_list[0])
+        numpy.testing.assert_array_equal(masked_array_list[1],
+                                         golden_masked_array_list[1])
+        numpy.testing.assert_array_equal(masked_array_list[2],
+                                         golden_masked_array_list[2])
+
+    def test__mean_from_sum(self):
+        # A masked array with four bands of 3 by 3 pixels
+        band_one = numpy.ma.masked_array(numpy.array([[1, 2, 5],
+                                                      [7, 3, 4],
+                                                      [8, 6, 2]],
+                                                     dtype='double'),
+                                         mask=numpy.array([[False, False, False],
+                                                           [False, False, True],
+                                                           [False, True, False]],
+                                                          dtype='bool'))
+
+        band_two = numpy.ma.masked_array(numpy.array([[6, 8, 9],
+                                                      [3, 1, 8],
+                                                      [2, 3, 6]],
+                                                     dtype='double'),
+                                         mask=numpy.array([[False, False, False],
+                                                           [False, True, False],
+                                                           [False, True, False]],
+                                                          dtype='bool'))
+
+        band_three = numpy.ma.masked_array(numpy.array([[3, 5, 2],
+                                                        [9, 6, 3],
+                                                        [7, 4, 6]],
+                                                       dtype='double'),
+                                           mask=numpy.array([[True, False, False],
+                                                             [False, False, False],
+                                                             [False, True, False]],
+                                                            dtype='bool'))
+
+
+        band_four = numpy.ma.masked_array(numpy.array([[7, 4, 3],
+                                                       [2, 6, 5],
+                                                       [1, 2, 8]],
+                                                      dtype='double'),
+                                          mask=numpy.array([[False, True, False],
+                                                            [False, True, True],
+                                                            [False, True, False]],
+                                                           dtype='bool'))
+
+        sum_masked_array = [band_one, band_two, band_three, band_four]
+
+        frequency_array = [numpy.array([[1, 1, 4], [2, 4, 1], [2, 0, 1]]),
+                           numpy.array([[2, 3, 1], [2, 2, 2], [5, 0, 2]]),
+                           numpy.array([[2, 1, 2], [1, 5, 1], [3, 0, 2]]),
+                           numpy.array([[3, 2, 3], [1, 7, 2], [4, 0, 3]])]
+
+        golden_mean = [numpy.array([[1, 2, 1], [3, 0, 4], [4, 0, 2]]),
+                       numpy.array([[3, 2, 9], [1, 0, 4], [0, 0, 3]]),
+                       numpy.array([[1, 5, 1], [9, 1, 3], [2, 0, 3]]),
+                       numpy.array([[2, 2, 1], [2, 0, 2], [0, 0, 2]])]
+
+        output_mean = time_stack._mean_from_sum(sum_masked_array, frequency_array,
+                                                numpy.uint16)
+
+        numpy.testing.assert_array_equal(output_mean,
+                                         golden_mean)
 
     def test__uniform_weight_alpha(self):
-        # Six images of 2 by 2 pixels
-        all_masks = [numpy.array([[False, True],
-                                  [False, False]], dtype='bool'),
-                     numpy.array([[False, False],
-                                  [False, False]], dtype='bool'),
-                     numpy.array([[True, True],
-                                  [False, False]], dtype='bool'),
-                     numpy.array([[True, True],
-                                  [False, True]], dtype='bool'),
-                     numpy.array([[False, True],
-                                  [False, True]], dtype='bool')]
+        # Five images of 2 by 2 pixels
+        band_one = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
+                                                     dtype='double'),
+                                         mask=numpy.array([[False, True],
+                                                           [False, False]],
+                                                          dtype='bool'))
 
-        golden_alpha = numpy.array([[False, True],
-                                    [True, False]], dtype='uint16')
+        band_two = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
+                                                     dtype='double'),
+                                         mask=numpy.array([[False, False],
+                                                           [False, False]],
+                                                          dtype='bool'))
 
-        output_alpha = time_stack._uniform_weight_alpha(all_masks,
+        band_three = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
+                                                       dtype='double'),
+                                           mask=numpy.array([[True, True],
+                                                             [False, False]],
+                                                            dtype='bool'))
+
+        band_four = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
+                                                       dtype='double'),
+                                           mask=numpy.array([[True, True],
+                                                             [False, True]],
+                                                            dtype='bool'))
+
+        band_five = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
+                                                       dtype='double'),
+                                           mask=numpy.array([[False, True],
+                                                             [False, True]],
+                                                            dtype='bool'))
+
+        sum_masked_array = [band_one, band_two, band_three, band_four, band_five]
+
+        golden_alpha = numpy.array([[0, 0],
+                                    [65535, 0]], dtype='uint16')
+
+        output_alpha = time_stack._uniform_weight_alpha(sum_masked_array,
                                                         numpy.uint16)
 
-        self.assertEqual(output_alpha.all(),
-                         golden_alpha.all())
+        numpy.testing.assert_array_equal(output_alpha,
+                                         golden_alpha)
 
 
 if __name__ == '__main__':
