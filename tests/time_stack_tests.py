@@ -67,7 +67,8 @@ class Tests(unittest.TestCase):
             {'geotransform': (0.0, 1.0, 0.0, 0.0, 0.0, 1.0)})
 
         output_gimage = time_stack.mean_with_uniform_weight(image_paths,
-                                                            numpy.uint16)
+                                                            numpy.uint16,
+                                                            None)
 
         for band in range(3):
             numpy.testing.assert_array_equal(output_gimage.bands[band],

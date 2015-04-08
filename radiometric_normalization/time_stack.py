@@ -24,7 +24,8 @@ from radiometric_normalization import gimage
 
 
 def generate(image_paths, output_path,
-             method='mean_with_uniform_weight'):
+             method='mean_with_uniform_weight',
+             image_nodata=None):
     '''Synthesizes a time stack image set into a single reference image.
 
     All images in time stack must:
@@ -50,7 +51,7 @@ def generate(image_paths, output_path,
 
     if method == 'mean_with_uniform_weight':
         output_gimage = mean_with_uniform_weight(
-            image_paths, output_datatype)
+            image_paths, output_datatype, image_nodata)
     else:
         raise NotImplementedError("Only 'mean_with_uniform_weight'"
                                   "method is implemented")
@@ -168,7 +169,7 @@ def _mean_from_sum(sum_masked_arrays,
     return output_mean
 
 
-def mean_with_uniform_weight(image_paths, output_datatype):
+def mean_with_uniform_weight(image_paths, output_datatype, image_nodata):
     ''' Calculates the reference image as the mean of each band with uniform
     weighting (zero for nodata pixels, 2 ** 16 - 1 for valid pixels)
 
@@ -193,7 +194,7 @@ def mean_with_uniform_weight(image_paths, output_datatype):
 
     working_datatype = numpy.double
     no_images = len(image_paths)
-    first_gimg = gimage.load(image_paths[0])
+    first_gimg = gimage.load(image_paths[0], image_nodata)
 
     sum_masked_arrays = _masked_arrays_from_gimg(first_gimg,
                                                  working_datatype)
