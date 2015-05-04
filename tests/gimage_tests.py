@@ -181,25 +181,29 @@ class Tests(unittest.TestCase):
              'different_key': 'different_var'})
 
         # All images are equal
-        result_one = gimage.check_equal([gimage_one, gimage_one, gimage_one])
-        self.assertEqual(result_one, True)
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_one])
 
         # One image different band data
-        result_two = gimage.check_equal([gimage_one, gimage_one, gimage_two])
-        self.assertEqual(result_two, False)
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_two])
 
         # One image different alpha
-        result_three = gimage.check_equal([gimage_one, gimage_three])
-        self.assertEqual(result_three, False)
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_three])
 
         # One image different not comparable
-        result_four = gimage.check_equal([gimage_one, gimage_one, gimage_four])
-        self.assertEqual(result_four, False)
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_four])
 
         # One image different not comparable
-        result_five = gimage.check_equal([gimage_one, gimage_one, gimage_five],
-                                          check_metadata=True)
-        self.assertEqual(result_five, False)
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_five])
 
 if __name__ == '__main__':
     unittest.main()

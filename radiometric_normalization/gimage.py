@@ -176,35 +176,14 @@ def check_comparable(gimages, check_metadata=False):
 
 
 def check_equal(gimages, check_metadata=False):
-    '''Checks that the gimages are equavalent (returns a boolean)'''
+    '''Checks that the gimages are equavalent'''
 
-    all_equal = True
-    try:
-        check_comparable(gimages, check_metadata)
-    except:
-        all_equal = False
+    check_comparable(gimages, check_metadata)
 
-    if all_equal is True:
-        no_bands = len(gimages[0].bands)
-        first_gimg = gimages[0]
-        for i, image in enumerate(gimages[1:]):
-            for band_index in xrange(no_bands):
-                if all_equal is True:
-                    all_equal = numpy.array_equal(
-                        first_gimg.bands[band_index], image.bands[band_index])
-                    logging.debug(['Band {} of {} is equal to the first image'
-                                  ' = {}'.format(band_index, no_bands,
-                                                 all_equal)])
+    first_gimg = gimages[0]
+    for i, image in enumerate(gimages[1:]):
+        numpy.testing.assert_equal(first_gimg.bands, image.bands, err_msg=[
+            'Image {} has different band data to the first image'.format(i)])
 
-            if all_equal is True:
-                all_equal = numpy.array_equal(first_gimg.alpha, image.alpha)
-                logging.debug(['Alpha bands is equal to the first image '
-                              '= {}'.format(all_equal)])
-
-            if all_equal is True:
-                if check_metadata and first_gimg.metadata != image.metadata:
-                    all_equal = False
-                logging.debug(['Metadata is equal to the first image '
-                              '= {}'.format(all_equal)])
-
-    return all_equal
+        numpy.testing.assert_equal(first_gimg.alpha, image.alpha, err_msg=[
+            'Image {} has different alpha data to the first image'.format(i)])
