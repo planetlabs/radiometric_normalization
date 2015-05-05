@@ -173,3 +173,19 @@ def check_comparable(gimages, check_metadata=False):
             raise Exception(
                 'Image {} has different geographic metadata: {} '
                 '(initial: {})'.format(i + 1, image.metadata, metadata))
+
+
+def check_equal(gimages, check_metadata=False):
+    '''Checks that the gimages are equavalent'''
+
+    check_comparable(gimages, check_metadata)
+
+    first_gimg = gimages[0]
+    for i, image in enumerate(gimages[1:]):
+        numpy.testing.assert_equal(first_gimg.bands, image.bands,
+                                   err_msg='Image {} has different band data'
+                                   ' to the first image'.format(i))
+
+        numpy.testing.assert_equal(first_gimg.alpha, image.alpha,
+                                   err_msg='Image {} has different alpha data'
+                                   ' to the first image'.format(i))

@@ -127,5 +127,82 @@ class Tests(unittest.TestCase):
             [one_band_gimage, one_band_gimage_with_metadata],
             check_metadata=True)
 
+    def test_check_equal(self):
+        # Standard image
+        gimage_one = gimage.GImage(
+            [numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[7, 8],
+                          [6, 3]], dtype='uint16')],
+            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'),
+            {'dummy_key': 'dummy_var'})
+
+        # Different band data
+        gimage_two = gimage.GImage(
+            [numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[7, 8],
+                          [9, 3]], dtype='uint16')],
+            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'),
+            {'dummy_key': 'dummy_var'})
+
+        # Different alpha
+        gimage_three = gimage.GImage(
+            [numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[7, 8],
+                          [6, 3]], dtype='uint16')],
+            numpy.array([[65535, 0], [0, 65535]], dtype='uint16'),
+            {'dummy_key': 'dummy_var'})
+
+        # Not comparable
+        gimage_four = gimage.GImage(
+            [numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16')],
+            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'),
+            {'dummy_key': 'dummy_var'})
+
+        # Different metadata
+        gimage_five = gimage.GImage(
+            [numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[4, 1],
+                          [2, 5]], dtype='uint16'),
+             numpy.array([[7, 8],
+                          [6, 3]], dtype='uint16')],
+            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'),
+            {'dummy_key': 'dummy_var',
+             'different_key': 'different_var'})
+
+        # All images are equal
+        gimage.check_equal([gimage_one, gimage_one, gimage_one])
+
+        # One image different band data
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_two])
+
+        # One image different alpha
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_three])
+
+        # One image different not comparable
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_four])
+
+        # One image different metadata
+        self.assertRaises(Exception,
+                          gimage.check_equal,
+                          [gimage_one, gimage_one, gimage_five],
+                          check_metadata=True)
+
 if __name__ == '__main__':
     unittest.main()
