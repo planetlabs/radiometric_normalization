@@ -182,8 +182,10 @@ def check_equal(gimages, check_metadata=False):
 
     first_gimg = gimages[0]
     for i, image in enumerate(gimages[1:]):
-        numpy.testing.assert_equal(first_gimg.bands, image.bands, err_msg=[
-            'Image {} has different band data to the first image'.format(i)])
+        numpy.testing.assert_equal(first_gimg.bands, image.bands,
+                                   err_msg='Image {} has different band data'
+                                   ' to the first image'.format(i))
 
-        numpy.testing.assert_equal(first_gimg.alpha, image.alpha, err_msg=[
-            'Image {} has different alpha data to the first image'.format(i)])
+        numpy.testing.assert_equal(first_gimg.alpha, image.alpha,
+                                   err_msg='Image {} has different alpha data'
+                                   ' to the first image'.format(i))

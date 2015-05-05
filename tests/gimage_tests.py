@@ -181,9 +181,7 @@ class Tests(unittest.TestCase):
              'different_key': 'different_var'})
 
         # All images are equal
-        self.assertRaises(Exception,
-                          gimage.check_equal,
-                          [gimage_one, gimage_one, gimage_one])
+        gimage.check_equal([gimage_one, gimage_one, gimage_one])
 
         # One image different band data
         self.assertRaises(Exception,
@@ -200,10 +198,11 @@ class Tests(unittest.TestCase):
                           gimage.check_equal,
                           [gimage_one, gimage_one, gimage_four])
 
-        # One image different not comparable
+        # One image different metadata
         self.assertRaises(Exception,
                           gimage.check_equal,
-                          [gimage_one, gimage_one, gimage_five])
+                          [gimage_one, gimage_one, gimage_five],
+                          check_metadata=True)
 
 if __name__ == '__main__':
     unittest.main()
