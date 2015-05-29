@@ -19,7 +19,7 @@ from radiometric_normalization import \
 
 def apply_transformations(input_path, transformations, output_path):
     ''' This wrapper function applies the transformations
-    derived by the library onto two files.
+    derived by the library onto an input file.
     '''
 
     gimg = gimage.load(input_path)

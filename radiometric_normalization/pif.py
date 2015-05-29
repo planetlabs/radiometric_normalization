@@ -39,7 +39,8 @@ def generate(candidate_path, reference_path, method='filter_nodata'):
     if method == 'filter_nodata':
         pif_weight = _filter_zero_alpha_pifs(reference_img, candidate_img)
     else:
-        raise NotImplementedError("Only 'filter_nodata' method is implemented.")
+        raise NotImplementedError("Only 'filter_nodata' method is "
+                                  "implemented.")
 
     return pif_weight, reference_img, candidate_img
 
