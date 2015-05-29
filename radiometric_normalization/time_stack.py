@@ -13,10 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
-
-''' Creates the time stacks for further analysis
-'''
-
 import numpy
 import logging
 
@@ -33,18 +29,18 @@ def generate(image_paths, output_path,
         - have the same band order
         - have the same size
         - have the same nodata value
+        - have the same geographic metadata
 
     The output file is only supposed to be used internally so options to change
     the nodata value and the datatype are not exposed.
-    - The output nodata value is 2 ** 15 - 1
     - The output image data type is uint16
-    - Since the output file is only meant to be used internally, the
-        geographic information isn't carried over to the output file.
+    - The output nodata values are indicated by a 0 in the alpha band
 
     Input:
         image_paths (list of str): A list of paths for input time stack images
-        method (str): Time stack analysis method [identity]
         output_path (str): A path to write the file to
+        method (str): Time stack analysis method [Identity]
+        image_nodata (int): [Optional] Manually provide a no data value
     '''
 
     output_datatype = numpy.uint16
@@ -123,7 +119,7 @@ def _uniform_weight_alpha(sum_masked_arrays, output_datatype):
         output_datatype (numpy datatype): The output datatype
 
     Output:
-        output_alpha (numpy uint16 array): The output mask 
+        output_alpha (numpy uint16 array): The output mask
             (0 for a no data pixel, uint16 max value otherwise)
     '''
 
@@ -142,7 +138,7 @@ def _mean_from_sum(sum_masked_arrays,
                    output_datatype):
     ''' Calculates the mean from the summation of all the images
 
-    Input: 
+    Input:
         sum_masked_arrays (list of numpy masked arrays): The list of
             masked arrays to find the mean of, each element of the list
             represents one band.
@@ -177,8 +173,8 @@ def mean_with_uniform_weight(image_paths, output_datatype, image_nodata):
     inbetween we use numpy double masked arrays so that we can safely take the
     summation of all the values without reaching the maximum value.
 
-    This function is written so that it should only load two gimages into 
-    memory at any one time (to save memory when analysing lists of > 100 
+    This function is written so that it should only load two gimages into
+    memory at any one time (to save memory when analysing lists of > 100
     images)
 
     Input:
@@ -186,7 +182,7 @@ def mean_with_uniform_weight(image_paths, output_datatype, image_nodata):
         output_datatype (numpy datatype): Data type for the output image
 
     Output:
-        output_gimage (gimage): The mean for each band and the mask in a
+        output_gimage (gimage): The mean for each band and the weighting in a
             gimage data format
     '''
 
@@ -208,13 +204,14 @@ def mean_with_uniform_weight(image_paths, output_datatype, image_nodata):
         new_gimg = gimage.load(image_paths[image_index])
         gimage.check_comparable([first_gimg, new_gimg], check_metadata=True)
 
-        new_masked_arrays = _masked_arrays_from_gimg(new_gimg, working_datatype)
+        new_masked_arrays = _masked_arrays_from_gimg(new_gimg,
+                                                     working_datatype)
         sum_masked_arrays, frequency_arrays = _sum_masked_array_list(
             sum_masked_arrays, frequency_arrays, new_masked_arrays)
 
     output_alpha = _uniform_weight_alpha(sum_masked_arrays, output_datatype)
     output_bands = _mean_from_sum(sum_masked_arrays, frequency_arrays,
-                                   output_datatype)
+                                  output_datatype)
 
     output_gimage = gimage.GImage(output_bands, output_alpha,
                                   first_gimg.metadata)
