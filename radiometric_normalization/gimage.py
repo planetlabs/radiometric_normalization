@@ -27,18 +27,22 @@ from osgeo import gdal, gdal_array
 GImage = namedtuple('GImage', 'bands, alpha, metadata')
 
 
-def save(gimage, filename, nodata=None):
-    gdal_ds = create_ds(gimage, filename)
+def save(gimage, filename, nodata=None, compress=False):
+    gdal_ds = create_ds(gimage, filename, compress)
     save_to_ds(gimage, gdal_ds, nodata)
 
 
-def create_ds(gimage, filename):
+def create_ds(gimage, filename, compress):
     # Alpha is saved as the last band
     band_count = len(gimage.bands) + 1
     options = ['ALPHA=YES']
 
     if band_count == 4:
         options.append('PHOTOMETRIC=RGB')
+
+    if compress:
+        options.append('COMPRESS=DEFLATE')
+        options.append('PREDICTOR=2')
 
     datatype = gdal.GDT_UInt16
     ysize, xsize = gimage.bands[0].shape

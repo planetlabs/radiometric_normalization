@@ -71,11 +71,30 @@ class Tests(unittest.TestCase):
         output_file = 'test_create_ds.tif'
         test_band = numpy.array([[0, 1, 2], [2, 3, 4]], dtype=numpy.uint16)
         test_gimage = gimage.GImage([test_band], self.mask, self.metadata)
-        test_ds = gimage.create_ds(test_gimage, output_file)
+        test_compress = False
+        test_ds = gimage.create_ds(test_gimage, output_file, test_compress)
 
         self.assertEqual(test_ds.RasterCount, 2)
         self.assertEqual(test_ds.RasterXSize, 3)
         self.assertEqual(test_ds.RasterYSize, 2)
+
+        os.unlink(output_file)
+
+    def test_save_with_compress(self):
+        output_file = 'test_save_with_compress.tif'
+        test_band = numpy.array([[5, 2, 2], [1, 6, 8]], dtype=numpy.uint16)
+        test_alpha = numpy.array([[0, 0, 0], [65535, 65535, 65535]],
+                                 dtype=numpy.uint16)
+        test_gimage = gimage.GImage([test_band, test_band, test_band],
+                                    test_alpha, self.metadata)
+        gimage.save(test_gimage, output_file, compress=True)
+
+        result_gimg = gimage.load(output_file)
+        numpy.testing.assert_array_equal(result_gimg.bands[0], test_band)
+        numpy.testing.assert_array_equal(result_gimg.bands[1], test_band)
+        numpy.testing.assert_array_equal(result_gimg.bands[2], test_band)
+        numpy.testing.assert_array_equal(result_gimg.alpha, test_alpha)
+        self.assertEqual(result_gimg.metadata, self.metadata)
 
         os.unlink(output_file)
 
