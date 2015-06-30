@@ -27,7 +27,7 @@ from osgeo import gdal, gdal_array
 GImage = namedtuple('GImage', 'bands, alpha, metadata')
 
 
-def save(gimage, filename, nodata=None, compress=False):
+def save(gimage, filename, nodata=None, compress=True):
     gdal_ds = create_ds(gimage, filename, compress)
     save_to_ds(gimage, gdal_ds, nodata)
 
