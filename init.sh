@@ -22,11 +22,14 @@ sudo apt-get install -y --force-yes \
     build-essential python-dev \
     python-pip python-numpy \
     python-nose python-nosexcover pylint pep8 \
-    python-gdal
+    python-gdal \
+    python-setuptools python-scipy \
+	libatlas-dev libatlas3gf-base
 
 # install radiometric_normalization
 echo $TOP | sudo tee /usr/local/lib/python2.7/dist-packages/radiometric_normalization.pth
 
 sudo pip install pyflakes
+sudo pip install scikit-learn
 
 set +o xtrace
