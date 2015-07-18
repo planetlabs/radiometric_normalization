@@ -99,7 +99,7 @@ def _filter_PCA_pifs(reference_gimage, candidate_gimage, lim):
     alpha = numpy.ones(array_shape)
     alpha[numpy.nonzero(candidate_gimage.alpha == 0)] = 0
     alpha[numpy.nonzero(reference_gimage.alpha == 0)] = 0
-    alpha_vec = alpha.flatten()
+    alpha_vec = alpha.ravel()
     valid_pixels_list = numpy.nonzero(alpha_vec != 0)
 
     PIF_all = numpy.ones(array_shape)
@@ -110,23 +110,23 @@ def _filter_PCA_pifs(reference_gimage, candidate_gimage, lim):
         logging.info('PCA Info: Band {}'.format(band_no))
 
         PIF_band = _PCA_fit_and_filter_single_band(
-            candidate_gimage.bands[band_no].flatten(),
-            reference_gimage.bands[band_no].flatten(),
+            candidate_gimage.bands[band_no].ravel(),
+            reference_gimage.bands[band_no].ravel(),
             valid_pixels_list, array_shape, lim)
         PIF_all = numpy.logical_and(PIF_band, PIF_all)
 
     if logging.getLogger().getEffectiveLevel() <= logging.INFO:
         for band_no in xrange(len(candidate_gimage.bands)):
             cand_combo_filtered = candidate_gimage.bands[band_no][
-                numpy.nonzero(PIF_all != 0)].flatten()
+                numpy.nonzero(PIF_all != 0)].ravel()
             ref_combo_filtered = reference_gimage.bands[band_no][
-                numpy.nonzero(PIF_all != 0)].flatten()
+                numpy.nonzero(PIF_all != 0)].ravel()
 
             logging.info('PCA Info: Filtered combo corrcoef (band {}) ='
                          ' {}'.format(band_no, numpy.corrcoef(
                             cand_combo_filtered, ref_combo_filtered)[0, 1]))
 
-    no_valid_pixels = len(numpy.nonzero(PIF_all.flatten() != 0)[0])
+    no_valid_pixels = len(numpy.nonzero(PIF_all.ravel() != 0)[0])
     no_total_pixels = candidate_gimage.bands[0].size
     valid_percent = 100.0 * no_valid_pixels / no_total_pixels
     logging.info('PCA Info: Found {} final pifs out of {} pixels ({}%)'.format(
@@ -228,7 +228,7 @@ def _PCA_PIF_single_band(pixels_pass_filter, valid_pixels, array_shape):
 
     # PIF images
     PIF = numpy.zeros(array_shape)
-    PIF_vec = PIF.flatten()
+    PIF_vec = PIF.ravel()
     for filtered_pixel in pixels_pass_filter[0]:
         PIF_vec[valid_pixels[0][filtered_pixel]] = 1
     PIF = numpy.reshape(PIF_vec, array_shape)
