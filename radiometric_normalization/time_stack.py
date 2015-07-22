@@ -52,7 +52,7 @@ def generate(image_paths, output_path,
         raise NotImplementedError("Only 'mean_with_uniform_weight'"
                                   "method is implemented")
 
-    gimage.save(output_gimage, output_path)
+    gimage.save(output_gimage, output_path, compress=False)
 
 
 def _sum_masked_array_list(sum_masked_arrays,
