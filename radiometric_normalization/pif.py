@@ -172,7 +172,10 @@ def _PCA_fit_and_filter_single_band(candidate_band, reference_band,
                                no_per_batch))
 
     passed_pixels = [[]]
-    for batch_no in xrange(len(cand_valid_batches)):
+
+    batch_iterator = numpy.nditer(numpy.array(cand_valid_batches), flags=['f_index', 'refs_ok'])
+    while not batch_iterator.finished:
+        batch_no = batch_iterator.index
         passed_pixels_batch = _PCA_filter_single_band(
             fitted_pca, cand_valid_batches[batch_no],
             ref_valid_batches[batch_no], lim)
@@ -180,6 +183,7 @@ def _PCA_fit_and_filter_single_band(candidate_band, reference_band,
             no_per_batch * batch_no + passed_pixels_batch[0]]
         passed_pixels = numpy.concatenate(
             (passed_pixels, passed_pixels_batch), axis=1)
+        batch_iterator.iternext()
 
     no_valid_pixels = len(passed_pixels[0])
     no_total_pixels = candidate_band.size
