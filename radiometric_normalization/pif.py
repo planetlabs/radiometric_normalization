@@ -16,6 +16,7 @@ limitations under the License.
 import logging
 import numpy
 from sklearn.decomposition import PCA
+from osgeo import gdal
 
 from radiometric_normalization import gimage
 
@@ -40,22 +41,25 @@ def generate(candidate_path, reference_path, method='filter_nodata',
     '''
 
     if method == 'filter_nodata':
-        pif_weight = _generate_zero_alpha_pifs(candidate_path, reference_path)
+        pif_weight, reference_gimg, candidate_gimg = \
+            _generate_zero_alpha_pifs(candidate_path, reference_path)
     if method == 'filter_PCA':
-        pif_weight = _generate_PCA_pifs(candidate_path, reference_path,
-                                        numpy.uint16(method_options))
+        pif_weight, reference_gimg, candidate_gimg = \
+            _generate_PCA_pifs(candidate_path, reference_path,
+                               numpy.uint16(method_options))
     else:
         raise NotImplementedError("Only 'filter_nodata' and 'PCA_filtering' "
                                   "methods are implemented.")
 
-    return pif_weight, reference_img, candidate_img
+    return pif_weight, reference_gimg, candidate_gimg
 
 
 def _generate_zero_alpha_pifs(candidate_path, reference_path):
     reference_img = gimage.load(reference_path)
     candidate_img = gimage.load(candidate_path)
+    pif_weight = _filter_zero_alpha_pifs(candidate_img, reference_img)
 
-    return _filter_zero_alpha_pifs(candidate_img, reference_img)
+    return pif_weight, reference_img, candidate_img
 
 
 def _filter_zero_alpha_pifs(candidate_gimage, reference_gimage):
@@ -88,49 +92,54 @@ def _filter_zero_alpha_pifs(candidate_gimage, reference_gimage):
 
 
 def _generate_PCA_pifs(candidate_path, reference_path, lim):
-    reference_img = gimage.load(reference_path)
-    candidate_img = gimage.load(candidate_path)
+    pif_weight = _filter_PCA_pifs(candidate_path, reference_path, lim)
 
-    return _filter_PCA_pifs(candidate_img, reference_img, lim)
+    return pif_weight, gimage.load(reference_path), gimage.load(candidate_path)
 
 
-def _filter_PCA_pifs(candidate_gimage, reference_gimage, lim):
+def _filter_PCA_pifs(candidate_path, reference_path, lim):
     ''' Performs PCA analysis, on the valid pixels and filters according
     to the distance from the principle eigenvector.
     '''
+    reference_ds = gdal.Open(reference_path)
+    candidate_ds = gdal.Open(candidate_path)
 
     logging.info('Pseudo invariant feature generation is using: Filtering '
                  'using PCA.')
 
-    gimage.check_comparable([reference_gimage, candidate_gimage])
+    # To Do: comparable check with gdal ds structure
+    #gimage.check_comparable([reference_gimage, candidate_gimage])
 
-    array_shape = candidate_gimage.bands[0].shape
+    c_alpha, c_band_count = gimage._read_alpha_and_band_count(candidate_ds)
+    r_alpha, r_band_count = gimage._read_alpha_and_band_count(reference_ds)
+
+    array_shape = c_alpha.shape
 
     # Only analyse valid pixels
     alpha = numpy.ones(array_shape)
-    alpha[numpy.nonzero(candidate_gimage.alpha == 0)] = 0
-    alpha[numpy.nonzero(reference_gimage.alpha == 0)] = 0
+    alpha[numpy.nonzero(c_alpha == 0)] = 0
+    alpha[numpy.nonzero(r_alpha == 0)] = 0
     alpha_vec = alpha.ravel()
     valid_pixels_list = numpy.nonzero(alpha_vec != 0)
 
     PIF_all = numpy.ones(array_shape)
 
     # Per band analysis
-    for band_no in xrange(len(candidate_gimage.bands)):
+    for band_no in xrange(c_band_count):
 
         logging.info('PCA Info: Band {}'.format(band_no))
 
         PIF_band = _PCA_fit_and_filter_single_band(
-            candidate_gimage.bands[band_no].ravel(),
-            reference_gimage.bands[band_no].ravel(),
+            gimage._read_single_band(candidate_ds, band_no+1).ravel(),
+            gimage._read_single_band(reference_ds, band_no+1).ravel(),
             valid_pixels_list, array_shape, lim)
         PIF_all = numpy.logical_and(PIF_band, PIF_all)
 
     if logging.getLogger().getEffectiveLevel() <= logging.INFO:
-        for band_no in xrange(len(candidate_gimage.bands)):
-            cand_combo_filtered = candidate_gimage.bands[band_no][
+        for band_no in xrange(c_band_count):
+            cand_combo_filtered = gimage._read_single_band(candidate_ds, band_no+1)[
                 numpy.nonzero(PIF_all != 0)].ravel()
-            ref_combo_filtered = reference_gimage.bands[band_no][
+            ref_combo_filtered = gimage._read_single_band(reference_ds, band_no+1)[
                 numpy.nonzero(PIF_all != 0)].ravel()
 
             logging.info('PCA Info: Filtered combo corrcoef (band {}) ='
@@ -138,7 +147,7 @@ def _filter_PCA_pifs(candidate_gimage, reference_gimage, lim):
                             cand_combo_filtered, ref_combo_filtered)[0, 1]))
 
     no_valid_pixels = len(numpy.nonzero(PIF_all.ravel() != 0)[0])
-    no_total_pixels = candidate_gimage.bands[0].size
+    no_total_pixels = c_alpha.size
     valid_percent = 100.0 * no_valid_pixels / no_total_pixels
     logging.info('PCA Info: Found {} final pifs out of {} pixels ({}%)'.format(
         no_valid_pixels, no_total_pixels, valid_percent))
