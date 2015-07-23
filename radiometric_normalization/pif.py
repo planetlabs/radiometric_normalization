@@ -46,7 +46,7 @@ def generate(candidate_path, reference_path, method='filter_nodata',
     if method == 'filter_PCA':
         pif_weight, reference_gimg, candidate_gimg = \
             _generate_PCA_pifs(candidate_path, reference_path,
-                               numpy.uint16(method_options))
+                               method_options)
     else:
         raise NotImplementedError("Only 'filter_nodata' and 'PCA_filtering' "
                                   "methods are implemented.")
@@ -91,13 +91,23 @@ def _filter_zero_alpha_pifs(candidate_gimage, reference_gimage):
     return pif_weight
 
 
-def _generate_PCA_pifs(candidate_path, reference_path, lim):
-    pif_weight = _filter_PCA_pifs(candidate_path, reference_path, lim)
+def _generate_PCA_pifs(candidate_path, reference_path, method_options):
+    if method_options is None:
+        lim = 10
+        no_per_batch = None
+    elif not isinstance(method_options, (list, tuple)):
+        lim = numpy.uint16(method_options)
+        no_per_batch = None
+    else:
+        lim = numpy.uint16(method_options[0])
+        no_per_batch = numpy.uint16(method_options[1])
+    pif_weight = _filter_PCA_pifs(candidate_path, reference_path,
+                                  lim, no_per_batch)
 
     return pif_weight, gimage.load(reference_path), gimage.load(candidate_path)
 
 
-def _filter_PCA_pifs(candidate_path, reference_path, lim):
+def _filter_PCA_pifs(candidate_path, reference_path, lim, no_per_batch):
     ''' Performs PCA analysis, on the valid pixels and filters according
     to the distance from the principle eigenvector.
     '''
@@ -132,15 +142,17 @@ def _filter_PCA_pifs(candidate_path, reference_path, lim):
         PIF_band = _PCA_fit_and_filter_single_band(
             gimage._read_single_band(candidate_ds, band_no+1).ravel(),
             gimage._read_single_band(reference_ds, band_no+1).ravel(),
-            valid_pixels_list, array_shape, lim)
+            valid_pixels_list, array_shape, lim, no_per_batch)
         PIF_all = numpy.logical_and(PIF_band, PIF_all)
 
     if logging.getLogger().getEffectiveLevel() <= logging.INFO:
         for band_no in xrange(c_band_count):
-            cand_combo_filtered = gimage._read_single_band(candidate_ds, band_no+1)[
-                numpy.nonzero(PIF_all != 0)].ravel()
-            ref_combo_filtered = gimage._read_single_band(reference_ds, band_no+1)[
-                numpy.nonzero(PIF_all != 0)].ravel()
+            cand_combo_filtered = gimage._read_single_band(
+                candidate_ds, band_no + 1)[
+                    numpy.nonzero(PIF_all != 0)].ravel()
+            ref_combo_filtered = gimage._read_single_band(
+                reference_ds, band_no + 1)[
+                    numpy.nonzero(PIF_all != 0)].ravel()
 
             logging.info('PCA Info: Filtered combo corrcoef (band {}) ='
                          ' {}'.format(band_no, numpy.corrcoef(
@@ -156,7 +168,8 @@ def _filter_PCA_pifs(candidate_path, reference_path, lim):
 
 
 def _PCA_fit_and_filter_single_band(candidate_band, reference_band,
-                                    valid_pixels_list, array_shape, lim):
+                                    valid_pixels_list, array_shape, lim,
+                                    no_per_batch):
     ''' Performs PCA analysis, on the valid pixels and filters according
     to the distance from the principle eigenvector, for a single band.
     '''
@@ -179,31 +192,37 @@ def _PCA_fit_and_filter_single_band(candidate_band, reference_band,
                             fitted_pca.explained_variance_ratio_[component_no])
                          )
 
-    def split_into_batches(array, no_per_batch):
-        return [array[i:i + no_per_batch]
-                for i in xrange(0, len(array), no_per_batch)]
+    if no_per_batch is None:
+        passed_pixels = _PCA_filter_single_band(
+            fitted_pca, cand_valid,
+            ref_valid, lim)
+    else:
+        def split_into_batches(array, no_per_batch):
+            return [array[i:i + no_per_batch]
+                    for i in xrange(0, len(array), no_per_batch)]
 
-    no_per_batch = 10000
-    cand_valid_batches = split_into_batches(cand_valid, no_per_batch)
-    ref_valid_batches = split_into_batches(ref_valid, no_per_batch)
+        cand_valid_batches = split_into_batches(cand_valid, no_per_batch)
+        ref_valid_batches = split_into_batches(ref_valid, no_per_batch)
 
-    logging.info('PCA Info: Dataset split into {} batches of {} '
-                 'each'.format(len(cand_valid_batches),
-                               no_per_batch))
+        logging.info('PCA Info: Dataset split into {} batches of {} '
+                     'each'.format(len(cand_valid_batches),
+                                   no_per_batch))
 
-    passed_pixels = [[]]
+        passed_pixels = [[]]
 
-    batch_iterator = numpy.nditer(numpy.array(cand_valid_batches), flags=['f_index', 'refs_ok'])
-    while not batch_iterator.finished:
-        batch_no = batch_iterator.index
-        passed_pixels_batch = _PCA_filter_single_band(
-            fitted_pca, cand_valid_batches[batch_no],
-            ref_valid_batches[batch_no], lim)
-        passed_pixels_batch = [
-            no_per_batch * batch_no + passed_pixels_batch[0]]
-        passed_pixels = numpy.concatenate(
-            (passed_pixels, passed_pixels_batch), axis=1)
-        batch_iterator.iternext()
+        batch_iterator = numpy.nditer(numpy.array(cand_valid_batches),
+                                      flags=['f_index', 'refs_ok'])
+        while not batch_iterator.finished:
+            batch_no = batch_iterator.index
+            if batch_no < len(cand_valid_batches):
+                passed_pixels_batch = _PCA_filter_single_band(
+                    fitted_pca, cand_valid_batches[batch_no],
+                    ref_valid_batches[batch_no], lim)
+                passed_pixels_batch = [
+                    no_per_batch * batch_no + passed_pixels_batch[0]]
+                passed_pixels = numpy.concatenate(
+                    (passed_pixels, passed_pixels_batch), axis=1)
+            batch_iterator.iternext()
 
     no_valid_pixels = len(passed_pixels[0])
     no_total_pixels = candidate_band.size
