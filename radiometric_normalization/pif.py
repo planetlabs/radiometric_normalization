@@ -39,19 +39,23 @@ def generate(candidate_path, reference_path, method='filter_nodata',
             a PIF the pixel is (0 for not a PIF)
     '''
 
-    reference_img = gimage.load(reference_path)
-    candidate_img = gimage.load(candidate_path)
-
     if method == 'filter_nodata':
-        pif_weight = _filter_zero_alpha_pifs(reference_img, candidate_img)
+        pif_weight = _generate_zero_alpha_pifs(candidate_path, reference_path)
     if method == 'filter_PCA':
-        pif_weight = _filter_PCA_pifs(reference_img, candidate_img,
-                                      numpy.uint16(method_options))
+        pif_weight = _generate_PCA_pifs(candidate_path, reference_path,
+                                        numpy.uint16(method_options))
     else:
         raise NotImplementedError("Only 'filter_nodata' and 'PCA_filtering' "
                                   "methods are implemented.")
 
     return pif_weight, reference_img, candidate_img
+
+
+def _generate_zero_alpha_pifs(candidate_path, reference_path):
+    reference_img = gimage.load(reference_path)
+    candidate_img = gimage.load(candidate_path)
+
+    return _filter_zero_alpha_pifs(reference_img, candidate_img)
 
 
 def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
@@ -81,6 +85,13 @@ def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
     pif_weight[valid_pixels] = reference_gimage.alpha[valid_pixels]
 
     return pif_weight
+
+
+def _generate_PCA_pifs(candidate_path, reference_path, lim):
+    reference_img = gimage.load(reference_path)
+    candidate_img = gimage.load(candidate_path)
+
+    return _filter_PCA_pifs(reference_img, candidate_img, lim)
 
 
 def _filter_PCA_pifs(reference_gimage, candidate_gimage, lim):
