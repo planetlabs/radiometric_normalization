@@ -53,12 +53,17 @@ class Tests(unittest.TestCase):
         test_metadata = gimage._read_metadata(gdal_ds)
         self.assertEqual(test_metadata, self.metadata)
 
-    def test__read_bands(self):
+    def test__read_all_bands(self):
         gdal_ds = gdal.Open(self.test_photometric_alpha_image)
-        bands = gimage._read_bands(gdal_ds, 3)
+        bands = gimage._read_all_bands(gdal_ds, 3)
         numpy.testing.assert_array_equal(bands[0], self.band)
         numpy.testing.assert_array_equal(bands[1], self.band)
         numpy.testing.assert_array_equal(bands[2], self.band)
+
+    def test__read_single_band(self):
+        gdal_ds = gdal.Open(self.test_photometric_alpha_image)
+        band = gimage._read_single_band(gdal_ds, 3)
+        numpy.testing.assert_array_equal(band, self.band)
 
     def test__read_alpha_and_band_count(self):
         gdal_ds = gdal.Open(self.test_photometric_alpha_image)

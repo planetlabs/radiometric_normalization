@@ -83,7 +83,7 @@ def load(filename, nodata=None):
             filename))
 
     alpha, band_count = _read_alpha_and_band_count(gdal_ds)
-    bands = _read_bands(gdal_ds, band_count)
+    bands = _read_all_bands(gdal_ds, band_count)
     metadata = _read_metadata(gdal_ds)
 
     if nodata is not None:
@@ -115,16 +115,22 @@ def _read_metadata(gdal_ds):
     return metadata
 
 
-def _read_bands(gdal_ds, band_count):
+def _read_all_bands(gdal_ds, band_count):
     bands = []
     for band_n in range(1, band_count + 1):
-        band = gdal_ds.GetRasterBand(band_n)
-        array = band.ReadAsArray()
-        if array is None:
-            raise Exception(
-                'GDAL error occured : {}'.format(gdal.GetLastErrorMsg()))
-        bands.append(array.astype(numpy.uint16))
+        bands.append(_read_single_band(gdal_ds, band_n))
     return bands
+
+
+def _read_single_band(gdal_ds, band_no):
+    ''' band_no is gdal style band numbering, i.e. from 1 onwards not 0 indexed
+    '''
+    band = gdal_ds.GetRasterBand(band_no)
+    array = band.ReadAsArray()
+    if array is None:
+        raise Exception(
+            'GDAL error occured : {}'.format(gdal.GetLastErrorMsg()))
+    return array.astype(numpy.uint16)
 
 
 def _read_alpha_and_band_count(gdal_ds):
