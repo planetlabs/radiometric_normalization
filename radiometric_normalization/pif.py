@@ -55,10 +55,10 @@ def _generate_zero_alpha_pifs(candidate_path, reference_path):
     reference_img = gimage.load(reference_path)
     candidate_img = gimage.load(candidate_path)
 
-    return _filter_zero_alpha_pifs(reference_img, candidate_img)
+    return _filter_zero_alpha_pifs(candidate_img, reference_img)
 
 
-def _filter_zero_alpha_pifs(reference_gimage, candidate_gimage):
+def _filter_zero_alpha_pifs(candidate_gimage, reference_gimage):
     ''' Creates the pseudo-invariant features from the reference and candidate
     gimages by filtering out pixels where either the candidate or mask alpha
     value is zero (masked)
@@ -91,10 +91,10 @@ def _generate_PCA_pifs(candidate_path, reference_path, lim):
     reference_img = gimage.load(reference_path)
     candidate_img = gimage.load(candidate_path)
 
-    return _filter_PCA_pifs(reference_img, candidate_img, lim)
+    return _filter_PCA_pifs(candidate_img, reference_img, lim)
 
 
-def _filter_PCA_pifs(reference_gimage, candidate_gimage, lim):
+def _filter_PCA_pifs(candidate_gimage, reference_gimage, lim):
     ''' Performs PCA analysis, on the valid pixels and filters according
     to the distance from the principle eigenvector.
     '''

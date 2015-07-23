@@ -38,7 +38,7 @@ class Tests(unittest.TestCase):
         golden_pif_weight = numpy.array([[0, 65535],
                                         [0, 65535]], dtype='uint16')
 
-        test_pif_weight = pif._filter_zero_alpha_pifs(reference, candidate)
+        test_pif_weight = pif._filter_zero_alpha_pifs(candidate, reference)
 
         numpy.testing.assert_array_equal(test_pif_weight,
                                          golden_pif_weight)
