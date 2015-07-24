@@ -41,25 +41,19 @@ def generate(candidate_path, reference_path, method='filter_nodata',
     '''
 
     if method == 'filter_nodata':
-        pif_weight, reference_gimg, candidate_gimg = \
-            _generate_zero_alpha_pifs(candidate_path, reference_path)
+        reference_gimg = gimage.load(reference_path)
+        candidate_gimg = gimage.load(candidate_path)
+        pif_weight = _generate_zero_alpha_pifs(candidate_gimg, reference_gimg)
     if method == 'filter_PCA':
-        pif_weight, reference_gimg, candidate_gimg = \
-            _generate_PCA_pifs(candidate_path, reference_path,
-                               method_options)
+        pif_weight = _generate_PCA_pifs(candidate_path, reference_path,
+                                        method_options)
+        reference_gimg = gimage.load(reference_path)
+        candidate_gimg = gimage.load(candidate_path)
     else:
         raise NotImplementedError("Only 'filter_nodata' and 'PCA_filtering' "
                                   "methods are implemented.")
 
     return pif_weight, reference_gimg, candidate_gimg
-
-
-def _generate_zero_alpha_pifs(candidate_path, reference_path):
-    reference_img = gimage.load(reference_path)
-    candidate_img = gimage.load(candidate_path)
-    pif_weight = _filter_zero_alpha_pifs(candidate_img, reference_img)
-
-    return pif_weight, reference_img, candidate_img
 
 
 def _filter_zero_alpha_pifs(candidate_gimage, reference_gimage):
@@ -98,13 +92,13 @@ def _generate_PCA_pifs(candidate_path, reference_path, method_options):
     elif not isinstance(method_options, (list, tuple)):
         lim = numpy.uint16(method_options)
         no_per_batch = None
-    else:
+    elif not isinstance(method_options, (list, tuple)) and
+    len(method_options) >= 2:
         lim = numpy.uint16(method_options[0])
         no_per_batch = numpy.uint16(method_options[1])
-    pif_weight = _filter_PCA_pifs(candidate_path, reference_path,
-                                  lim, no_per_batch)
 
-    return pif_weight, gimage.load(reference_path), gimage.load(candidate_path)
+    return _filter_PCA_pifs(candidate_path, reference_path,
+                            lim, no_per_batch)
 
 
 def _filter_PCA_pifs(candidate_path, reference_path, lim, no_per_batch):
