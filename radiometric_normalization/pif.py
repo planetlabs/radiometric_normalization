@@ -117,11 +117,12 @@ def _filter_PCA_pifs(candidate_path, reference_path, lim, no_per_batch):
     logging.info('Pseudo invariant feature generation is using: Filtering '
                  'using PCA.')
 
-    # To Do: comparable check with gdal ds structure
-    #gimage.check_comparable([reference_gimage, candidate_gimage])
-
     c_alpha, c_band_count = gimage._read_alpha_and_band_count(candidate_ds)
     r_alpha, r_band_count = gimage._read_alpha_and_band_count(reference_ds)
+
+    # Check comparable
+    assert r_band_count == c_band_count
+    assert r_alpha.shape == c_alpha.shape
 
     array_shape = c_alpha.shape
 
