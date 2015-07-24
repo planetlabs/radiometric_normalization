@@ -92,10 +92,12 @@ def _generate_PCA_pifs(candidate_path, reference_path, method_options):
     elif not isinstance(method_options, (list, tuple)):
         lim = numpy.uint16(method_options)
         no_per_batch = None
-    elif not isinstance(method_options, (list, tuple)) and
-    len(method_options) >= 2:
+    elif len(method_options) >= 2:
         lim = numpy.uint16(method_options[0])
         no_per_batch = numpy.uint16(method_options[1])
+    else:
+        raise Exception('Unknown method options for PCA PIF '
+                        'filtering: {}'.format(method_options))
 
     return _filter_PCA_pifs(candidate_path, reference_path,
                             lim, no_per_batch)
