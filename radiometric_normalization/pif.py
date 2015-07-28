@@ -43,8 +43,8 @@ def generate(candidate_path, reference_path, method='filter_nodata',
     if method == 'filter_nodata':
         reference_gimg = gimage.load(reference_path)
         candidate_gimg = gimage.load(candidate_path)
-        pif_weight = _generate_zero_alpha_pifs(candidate_gimg, reference_gimg)
-    if method == 'filter_PCA':
+        pif_weight = _filter_zero_alpha_pifs(candidate_gimg, reference_gimg)
+    elif method == 'filter_PCA':
         pif_weight = _generate_PCA_pifs(candidate_path, reference_path,
                                         method_options)
         reference_gimg = gimage.load(reference_path)
