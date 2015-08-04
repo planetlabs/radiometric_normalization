@@ -83,12 +83,12 @@ class Tests(unittest.TestCase):
         numpy.testing.assert_array_equal(pif_weight, golden_pif_weight)
 
     def test__PCA_fit_and_filter_single_band(self):
-        ref_band = numpy.array([1, 2, 3,
-                                4, 5, 6,
-                                7, 8, 9])
-        cand_band = numpy.array([1.1, 1.9, 2.9,
-                                 10, 5, 7,
-                                 7.1, 7.9, 9])
+        ref_band = numpy.array([10, 20, 30,
+                                40, 50, 60,
+                                70, 80, 90])
+        cand_band = numpy.array([11, 19, 29,
+                                 100, 50, 70,
+                                 71, 79, 90])
         alpha_vec = numpy.array([65535, 65535, 65535,
                                  0, 65535, 65535,
                                  65535, 65535, 65535])
@@ -99,7 +99,7 @@ class Tests(unittest.TestCase):
         pif_weight = pif._PCA_fit_and_filter_single_band(cand_band, ref_band,
                                                          valid_pixels,
                                                          array_shape,
-                                                         0.5, None)
+                                                         5, None)
         golden_pif_weight = numpy.array([[1, 1, 1],
                                          [0, 1, 0],
                                          [1, 1, 1]])
@@ -129,7 +129,7 @@ class Tests(unittest.TestCase):
         pif_weight = pif._PCA_fit_and_filter_single_band(cand_band, ref_band,
                                                          valid_pixels,
                                                          array_shape,
-                                                         0.5, 1)
+                                                         5, 1)
         golden_pif_weight = numpy.array([[1, 1, 1],
                                          [0, 1, 0],
                                          [1, 1, 1]])
@@ -139,14 +139,14 @@ class Tests(unittest.TestCase):
         pif_weight = pif._PCA_fit_and_filter_single_band(cand_band, ref_band,
                                                          valid_pixels,
                                                          array_shape,
-                                                         0.5, 2)
+                                                         5, 2)
         numpy.testing.assert_array_equal(pif_weight, golden_pif_weight)
 
         # Test batches large
         pif_weight = pif._PCA_fit_and_filter_single_band(cand_band, ref_band,
                                                          valid_pixels,
                                                          array_shape,
-                                                         0.5, 10000)
+                                                         5, 10000)
         numpy.testing.assert_array_equal(pif_weight, golden_pif_weight)
 
 
