@@ -53,8 +53,9 @@ class Tests(unittest.TestCase):
         self.assertAlmostEqual(test_pca.explained_variance_[1], 0)
         self.assertTrue(
             test_pca.explained_variance_[0] > test_pca.explained_variance_[1])
-        test_pca = pif._PCA_fit_single_band([1.00001, 1, 1, 1, 1],
-                                            [0, 0, 0, 0, 0])
+        test_pca = pif._PCA_fit_single_band(
+            [100001, 100000, 100000, 100000, 100000],
+            [0, 0, 0, 0, 0])
         numpy.testing.assert_array_almost_equal(
             test_pca.components_, numpy.array([[-1, 0],
                                                [0, 1]]))
