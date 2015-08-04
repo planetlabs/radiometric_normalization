@@ -306,7 +306,7 @@ def _PCA_PIF_single_band(pixels_pass_filter, valid_pixels, array_shape):
     '''
 
     # PIF images
-    PIF = numpy.zeros(array_shape)
+    PIF = numpy.zeros(array_shape, dtype=numpy.uint16)
     PIF_vec = PIF.ravel()
     for filtered_pixel in pixels_pass_filter[0]:
         PIF_vec[valid_pixels[0][filtered_pixel]] = 1
