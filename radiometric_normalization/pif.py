@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
+import itertools
 import logging
 import numpy
 from sklearn.decomposition import PCA
@@ -123,13 +124,13 @@ def _filter_PCA_pifs(candidate_path, reference_path, lim, no_per_batch):
     array_shape = c_alpha.shape
 
     # Only analyse valid pixels
-    alpha = numpy.ones(array_shape)
+    alpha = numpy.ones(array_shape, dtype=numpy.uint16)
     alpha[numpy.nonzero(c_alpha == 0)] = 0
     alpha[numpy.nonzero(r_alpha == 0)] = 0
     alpha_vec = alpha.ravel()
     valid_pixels_list = numpy.nonzero(alpha_vec != 0)
 
-    PIF_all = numpy.ones(array_shape)
+    PIF_all = numpy.ones(array_shape, dtype=numpy.uint16)
 
     # Per band analysis
     for band_no in xrange(c_band_count):
@@ -236,8 +237,9 @@ def _PCA_fit_single_band(cand_valid, ref_valid):
     ''' Uses SK Learn PCA module to do PCA fit
     '''
 
+    X = np_array_from_2arrays(cand_valid, ref_valid)
+
     # SK Learn PCA
-    X = numpy.array(zip(cand_valid, ref_valid))
     pca = PCA(n_components=2)
 
     # Fit the points
@@ -246,12 +248,49 @@ def _PCA_fit_single_band(cand_valid, ref_valid):
     return pca
 
 
+def np_array_from_2arrays(array1, array2, dtype=numpy.uint16):
+    '''Efficiently combine two 1-D arrays into a single 2-D array.
+
+    Avoids large memory usage by creating the array using
+    ``numpy.fromiter`` and then reshaping a view of the resulting
+    record array.  This does the equivalent of:
+
+        numpy.array(zip(array1, array2))
+
+    but avoids holding a potentially large number of tuples in memory.
+
+    >>> a = numpy.array([1, 2, 3])
+    >>> b = numpy.array([4, 5, 6])
+    >>> X = np_array_from_2arrays(a, b)
+    >>> X
+    array([[1, 4],
+           [2, 5],
+           [3, 6]], dtype=uint16)
+
+    :param array1: A 1-D numpy array.
+
+    :param array2: A second 1-D numpy array.
+
+    :param dtype: Data time for array elements (must be same for both arrays)
+
+    :returns: A 2-D numpy array.
+    '''
+
+    array_dtype = [('x', dtype), ('y', dtype)]
+
+    return numpy.fromiter(itertools.izip(array1, array2), dtype=array_dtype) \
+                .view(dtype=dtype) \
+                .reshape((-1, 2))
+
+
 def _PCA_filter_single_band(pca, cand_valid, ref_valid, lim):
     ''' Uses SK Learn PCA module to transform the data and filter
     '''
 
-    X = numpy.array(zip(cand_valid, ref_valid))
+    X = np_array_from_2arrays(cand_valid, ref_valid)
     X_trans = pca.transform(X)
+
+    # this is ok, only a single tuple and a 1-D array is being created
     _, ref_valid_trans_list = zip(*X_trans)
     ref_valid_trans = numpy.array(ref_valid_trans_list)
 
