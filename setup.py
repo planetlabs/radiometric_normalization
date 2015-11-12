@@ -13,13 +13,17 @@ def parse_requirements(requirements_filename='requirements.txt'):
             requirements.append(requirement.rstrip('\n'))
     return requirements
 
-
 try:
-    patch = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD']).strip()
+    fd = open('VERSION')
+    VERSION = fd.read().strip()
+    fd.close()
 except:
-    patch = 'no-git'
+    try:
+        patch = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD']).strip()
+    except:
+        patch = 'no-git'
 
-VERSION = '0.1.%s' % patch
+    VERSION = '0.1.%s' % patch
 
 config = dict(
     name='radiometric_normalization',
