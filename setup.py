@@ -27,8 +27,8 @@ config = dict(
     version=VERSION,
     url='https://github.com/planetlabs/radiometric_normalization',
     description='Radiometric Normalization',
-    author='Jennifer Reiber Kyle',
-    author_email='jennifer.kyle@planet.com',
+    author='Arin Jumpasut',
+    author_email='arin.jumpasut@planet.com',
     install_requires=parse_requirements(),
     classifiers=[
         "Development Status :: 1 - Planning",
