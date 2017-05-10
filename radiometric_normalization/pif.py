@@ -26,10 +26,16 @@ DEFAULT_PCA_OPTIONS = pca_options(limit=30)
 
 def generate_alpha_band_pifs(candidate_alpha, reference_alpha):
     ''' Creates the pseudo-invariant features from the reference and candidate
-    gimages by filtering out pixels where either the candidate or mask alpha
-    value is zero (masked)
-    '''
+    alpha masks (filtering out pixels where either the candidate or reference
+    is masked, i.e. the alpha value is False).
 
+    :param array candidate_alpha: A 2D array representing the alpha mask of the
+                                  candidate image
+    :param array reference_alpha: A 2D array representing the alpha mask of the
+                                  reference image
+
+    :returns: A 2-D boolean array representing pseudo invariant features
+    '''
     logging.info('Pseudo invariant feature generation is using: Filtering '
                  'using the alpha mask.')
     combined_alpha = numpy.logical_and(candidate_alpha, reference_alpha)
@@ -43,23 +49,33 @@ def generate_alpha_band_pifs(candidate_alpha, reference_alpha):
             'PCA Info: Found {} final pifs out of {} pixels ({}%)'.format(
                 no_valid_pixels, no_total_pixels, valid_percent))
 
-    pif_weight = numpy.zeros(candidate_alpha.shape, dtype=numpy.bool)
-    pif_weight[valid_pixels] = True
+    pif_mask = numpy.zeros(candidate_alpha.shape, dtype=numpy.bool)
+    pif_mask[valid_pixels] = True
 
-    return pif_weight
+    return pif_mask
 
 
 def generate_pca_pifs(candidate_band, candidate_alpha,
                       reference_band, reference_alpha,
-                      parameters=None):
-    ''' Performs PCA analysis, on the valid pixels and filters according
+                      parameters=DEFAULT_PCA_OPTIONS):
+    ''' Performs PCA analysis on the valid pixels and filters according
     to the distance from the principle eigenvector.
+
+    :param array candidate_band: A 2D array representing the image data of the
+                                 candidate band
+    :param array candidate_alpha: A 2D array representing the alpha mask of the
+                                  candidate image
+    :param array reference_band: A 2D array representing the image data of the
+                                  reference image
+    :param array reference_alpha: A 2D array representing the alpha mask of the
+                                  reference image
+    :param pca_options parameters: Method specific parameters. Currently:
+        limit (float): Representing the width of the PCA filter
+
+    :returns: A 2-D boolean array representing pseudo invariant features
     '''
     logging.info('Pseudo invariant feature generation is using: Filtering '
                  'using PCA.')
-
-    if not parameters:
-        parameters = DEFAULT_PCA_OPTIONS
 
     # Only analyse valid pixels
     combined_alpha = numpy.logical_and(candidate_alpha, reference_alpha)
@@ -69,16 +85,30 @@ def generate_pca_pifs(candidate_band, candidate_alpha,
     passed_pixels = _pca_fit_and_filter_valid_pixels(
         candidate_band[valid_pixels], reference_band[valid_pixels],
         parameters)
+    pif_mask = _create_pif_mask(passed_pixels, combined_alpha)
 
     if logging.getLogger().getEffectiveLevel() <= logging.INFO:
-        no_pif_pixels = len(passed_pixels)
-        no_total_pixels = candidate_band.size
-        valid_percent = 100.0 * no_pif_pixels / no_total_pixels
-        logging.info(
-            'PCA Info: Found {} final pifs out of {} pixels ({}%)'.format(
-                no_pif_pixels, no_total_pixels, valid_percent))
+        _pca_logging(candidate_band, reference_band,
+                     valid_pixels, numpy.nonzero(pif_mask))
 
-    return _create_pif_weights(passed_pixels, combined_alpha)
+    return pif_mask
+
+
+def _pca_logging(c_band, r_band, valid_pixels, pif_pixels):
+    ''' Optional logging information
+    '''
+    logging.info('PCA Info: Original corrcoef = {}'.format(
+        numpy.corrcoef(c_band[valid_pixels], r_band[valid_pixels])[0, 1]))
+
+    logging.info('PCA Info: Filtered corrcoef = {}'.format(
+        numpy.corrcoef(c_band[pif_pixels], r_band[pif_pixels])[0, 1]))
+
+    no_pif_pixels = len(pif_pixels[0])
+    no_total_pixels = c_band.size
+    valid_percent = 100.0 * no_pif_pixels / no_total_pixels
+    logging.info(
+        'PCA Info: Found {} final pifs out of {} pixels ({}%)'.format(
+            no_pif_pixels, no_total_pixels, valid_percent))
 
 
 def _pca_fit_and_filter_valid_pixels(candidate_pixels, reference_pixels,
@@ -89,23 +119,6 @@ def _pca_fit_and_filter_valid_pixels(candidate_pixels, reference_pixels,
     fitted_pca = _pca_fit_single_band(candidate_pixels, reference_pixels)
     passed_pixels = _pca_filter_single_band(
         fitted_pca, candidate_pixels, reference_pixels, parameters.limit)
-
-    if logging.getLogger().getEffectiveLevel() <= logging.INFO:
-        logging.info('PCA Info: Original corrcoef = {}'.format(
-            numpy.corrcoef(candidate_pixels, reference_pixels)[0, 1]))
-
-        for component_no in xrange(len(fitted_pca.components_)):
-            logging.info(
-                'PCA Info: Component {} is {} with an explained '
-                'variance of {}'.format(
-                    component_no,
-                    fitted_pca.components_[component_no],
-                    fitted_pca.explained_variance_ratio_[component_no]))
-
-        candidate_pifs = candidate_pixels[passed_pixels]
-        reference_pifs = reference_pixels[passed_pixels]
-        logging.info('PCA Info: Filtered corrcoef = {}'.format(
-            numpy.corrcoef(candidate_pifs, reference_pifs)[0, 1]))
 
     return passed_pixels
 
@@ -144,13 +157,12 @@ def _numpy_array_from_2arrays(array1, array2, dtype=numpy.uint16):
            [2, 5],
            [3, 6]], dtype=uint16)
 
-    :param array1: A 1-D numpy array.
+    :param array array1: A 1-D numpy array.
+    :param array array2: A second 1-D numpy array.
+    :param data-type dtype: Data type for array elements
+        (must be same for both arrays)
 
-    :param array2: A second 1-D numpy array.
-
-    :param dtype: Data type for array elements (must be same for both arrays)
-
-    :returns: A 2-D numpy array.
+    :returns: A 2-D numpy array combining the two input arrays
     '''
 
     array_dtype = [('x', dtype), ('y', dtype)]
@@ -161,7 +173,7 @@ def _numpy_array_from_2arrays(array1, array2, dtype=numpy.uint16):
 
 
 def _pca_filter_single_band(pca, cand_valid, ref_valid, limit):
-    ''' Uses SK Learn PCA module to transform the data and filter
+    ''' Uses SciKit Learn PCA module to transform the data and filter
     '''
 
     X = _numpy_array_from_2arrays(cand_valid, ref_valid)
@@ -178,7 +190,7 @@ def _pca_filter_single_band(pca, cand_valid, ref_valid, limit):
     return pixels_pass_filter
 
 
-def _create_pif_weights(passed_pixels, alpha):
+def _create_pif_mask(passed_pixels, alpha):
     ''' Converts the list of filtered pixels to a PIF array
     '''
 
