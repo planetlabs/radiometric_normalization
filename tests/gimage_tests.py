@@ -25,7 +25,7 @@ from radiometric_normalization import gimage
 class Tests(unittest.TestCase):
     def setUp(self):
         self.band = numpy.array([[0, 1], [2, 3]], dtype=numpy.uint16)
-        self.mask = 65535 * numpy.array([[0, 1], [0, 1]], dtype=numpy.uint16)
+        self.mask = numpy.array([[0, 1], [0, 1]], dtype=numpy.bool)
         self.metadata = {'geotransform': (-1.0, 2.0, 0.0, 1.0, 0.0, -1.0)}
 
         self.test_photometric_alpha_image = 'test_photometric_alpha_image.tif'
@@ -48,9 +48,9 @@ class Tests(unittest.TestCase):
         expected_mask = numpy.array([[1, 1, 1], [1, 1, 0]], dtype=numpy.uint16)
         numpy.testing.assert_array_equal(test_mask, expected_mask)
 
-    def test__read_metadata(self):
+    def test_read_metadata(self):
         gdal_ds = gdal.Open(self.test_photometric_alpha_image)
-        test_metadata = gimage._read_metadata(gdal_ds)
+        test_metadata = gimage.read_metadata(gdal_ds)
         self.assertEqual(test_metadata, self.metadata)
 
     def test__read_all_bands(self):
@@ -60,25 +60,25 @@ class Tests(unittest.TestCase):
         numpy.testing.assert_array_equal(bands[1], self.band)
         numpy.testing.assert_array_equal(bands[2], self.band)
 
-    def test__read_single_band(self):
+    def test_read_single_band(self):
         gdal_ds = gdal.Open(self.test_photometric_alpha_image)
-        band = gimage._read_single_band(gdal_ds, 3)
+        band = gimage.read_single_band(gdal_ds, 3)
         numpy.testing.assert_array_equal(band, self.band)
 
-    def test__read_alpha_and_band_count(self):
+    def test_read_alpha_and_band_count(self):
         gdal_ds = gdal.Open(self.test_photometric_alpha_image)
-        alpha, band_count = gimage._read_alpha_and_band_count(gdal_ds)
+        alpha, band_count = gimage.read_alpha_and_band_count(gdal_ds)
 
         self.assertEqual(band_count, 3)
         numpy.testing.assert_array_equal(alpha, self.mask)
 
-    def test_create_ds(self):
+    def test__create_ds(self):
         output_file = 'test_create_ds.tif'
         test_band = numpy.array([[0, 1, 2], [2, 3, 4]], dtype=numpy.uint16)
         test_gimage = gimage.GImage([test_band], self.mask, self.metadata)
         test_compress = False
-        test_ds = gimage.create_ds(test_gimage, output_file,
-                                   compress=test_compress)
+        test_ds = gimage._create_ds(test_gimage, output_file,
+                                    compress=test_compress)
 
         self.assertEqual(test_ds.RasterCount, 2)
         self.assertEqual(test_ds.RasterXSize, 3)
@@ -89,8 +89,7 @@ class Tests(unittest.TestCase):
     def test_save_with_compress(self):
         output_file = 'test_save_with_compress.tif'
         test_band = numpy.array([[5, 2, 2], [1, 6, 8]], dtype=numpy.uint16)
-        test_alpha = numpy.array([[0, 0, 0], [65535, 65535, 65535]],
-                                 dtype=numpy.uint16)
+        test_alpha = numpy.array([[0, 0, 0], [1, 1, 1]], dtype=numpy.bool)
         test_gimage = gimage.GImage([test_band, test_band, test_band],
                                     test_alpha, self.metadata)
         gimage.save(test_gimage, output_file, compress=True)
@@ -104,7 +103,7 @@ class Tests(unittest.TestCase):
 
         os.unlink(output_file)
 
-    def test_save_to_ds(self):
+    def test__save_to_ds(self):
         output_file = 'test_save_to_ds.tif'
 
         test_band = numpy.array([[0, 1], [2, 3]], dtype=numpy.uint16)
@@ -112,7 +111,7 @@ class Tests(unittest.TestCase):
         output_ds = gdal.GetDriverByName('GTiff').Create(
             output_file, 2, 2, 2, gdal.GDT_UInt16,
             options=['ALPHA=YES'])
-        gimage.save_to_ds(test_gimage, output_ds, nodata=3)
+        gimage._save_to_ds(test_gimage, output_ds, nodata=3)
 
         # Required for gdal to write to file
         output_ds = None
@@ -156,52 +155,52 @@ class Tests(unittest.TestCase):
         # Standard image
         gimage_one = gimage.GImage(
             [numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16),
              numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16),
              numpy.array([[7, 8],
-                          [6, 3]], dtype='uint16')],
-            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'),
+                          [6, 3]], dtype=numpy.uint16)],
+            numpy.array([[1, 0], [1, 1]], dtype=numpy.bool),
             {'dummy_key': 'dummy_var'})
 
         # Different band data
         gimage_two = gimage.GImage(
             [numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16),
              numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16),
              numpy.array([[7, 8],
-                          [9, 3]], dtype='uint16')],
-            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'),
+                          [9, 3]], dtype=numpy.uint16)],
+            numpy.array([[1, 0], [1, 1]], dtype=numpy.bool),
             {'dummy_key': 'dummy_var'})
 
         # Different alpha
         gimage_three = gimage.GImage(
             [numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16),
              numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16),
              numpy.array([[7, 8],
-                          [6, 3]], dtype='uint16')],
-            numpy.array([[65535, 0], [0, 65535]], dtype='uint16'),
+                          [6, 3]], dtype=numpy.uint16)],
+            numpy.array([[1, 0], [0, 1]], dtype=numpy.bool),
             {'dummy_key': 'dummy_var'})
 
         # Not comparable
         gimage_four = gimage.GImage(
             [numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16')],
-            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16)],
+            numpy.array([[1, 0], [1, 1]], dtype=numpy.bool),
             {'dummy_key': 'dummy_var'})
 
         # Different metadata
         gimage_five = gimage.GImage(
             [numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16),
              numpy.array([[4, 1],
-                          [2, 5]], dtype='uint16'),
+                          [2, 5]], dtype=numpy.uint16),
              numpy.array([[7, 8],
-                          [6, 3]], dtype='uint16')],
-            numpy.array([[65535, 0], [65535, 65535]], dtype='uint16'),
+                          [6, 3]], dtype=numpy.uint16)],
+            numpy.array([[1, 0], [1, 1]], dtype=numpy.bool),
             {'dummy_key': 'dummy_var',
              'different_key': 'different_var'})
 

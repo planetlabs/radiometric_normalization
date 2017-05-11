@@ -100,15 +100,19 @@ def _pca_logging(c_band, r_band, valid_pixels, pif_pixels):
     logging.info('PCA Info: Original corrcoef = {}'.format(
         numpy.corrcoef(c_band[valid_pixels], r_band[valid_pixels])[0, 1]))
 
-    logging.info('PCA Info: Filtered corrcoef = {}'.format(
-        numpy.corrcoef(c_band[pif_pixels], r_band[pif_pixels])[0, 1]))
+    if pif_pixels[0] != [] and pif_pixels[1] != []:
+        logging.info('PCA Info: Filtered corrcoef = {}'.format(
+            numpy.corrcoef(c_band[pif_pixels], r_band[pif_pixels])[0, 1]))
 
-    no_pif_pixels = len(pif_pixels[0])
-    no_total_pixels = c_band.size
-    valid_percent = 100.0 * no_pif_pixels / no_total_pixels
-    logging.info(
-        'PCA Info: Found {} final pifs out of {} pixels ({}%)'.format(
-            no_pif_pixels, no_total_pixels, valid_percent))
+        no_pif_pixels = len(pif_pixels[0])
+        no_total_pixels = c_band.size
+        valid_percent = 100.0 * no_pif_pixels / no_total_pixels
+        logging.info(
+            'PCA Info: Found {} final PIFs out of {} pixels ({}%)'.format(
+                no_pif_pixels, no_total_pixels, valid_percent))
+    else:
+        logging.info('PCA Info: No PIF pixels found.')
+
 
 
 def _pca_fit_and_filter_valid_pixels(candidate_pixels, reference_pixels,

@@ -40,7 +40,7 @@ def _create_ds(gimage, filename, compress):
     # Alpha is saved as the last band
     band_count = len(gimage.bands) + 1
 
-    options = []
+    options = ['PHOTOMETRIC=RGB', 'ALPHA=YES']
     if compress:
         options.append('COMPRESS=DEFLATE')
         options.append('PREDICTOR=2')
@@ -67,7 +67,8 @@ def _save_to_ds(gimage, gdal_ds, nodata=None):
 
     # Last band is alpha
     alpha_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
-    gdal_array.BandWriteArray(alpha_band * 255, gimage.alpha)
+    alpha_band.SetColorInterpretation(gdal.GCI_AlphaBand)
+    gdal_array.BandWriteArray(alpha_band, gimage.alpha.astype(numpy.uint16))
 
     # Save georeferencing information
     if 'projection' in gimage.metadata.keys():
@@ -137,14 +138,15 @@ def read_single_band(gdal_ds, band_no):
 
 
 def read_alpha_and_band_count(gdal_ds):
-    logging.debug("Loading alpha. Initial band count: {}".format(
+    logging.debug('Initial band count: {}'.format(
         gdal_ds.RasterCount))
     last_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     if last_band.GetColorInterpretation() == gdal.GCI_AlphaBand:
-        logging.debug("Alpha band found, reducing band count")
+        logging.debug('Alpha band found, reducing band count')
         alpha = last_band.ReadAsArray().astype(numpy.bool)
         band_count = gdal_ds.RasterCount - 1
     else:
+        logging.debug('No alpha band found')
         alpha = numpy.ones(
             (gdal_ds.RasterYSize, gdal_ds.RasterXSize),
             dtype=numpy.bool)
