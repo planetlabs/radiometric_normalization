@@ -9,7 +9,7 @@ The full radiometric normalization workflow is contained within normalize.py. It
 
 There is also an additional validation module (validation.py). This will be used in regression testing of the library.
 
-## Time stack analysis - time_stack.py
+## Time stack analysis - time_stack.py - DEPRECIATED
 
 This is where a single reference image is create from a set of images of the same geographic location over time. 
 
@@ -33,7 +33,7 @@ This module analyzes the set of images and creates a single output image that re
 
 ## Pseudo-invariant feature generation - pif.py
 
-The reference and candidate images are analyzed to find pixels that are invariant over the set. The motivation for this step is removing the effect of change (e.g. clouds or snow) from the normalization transformation calculation. `pif_wrapper.py` has an example useage.
+The reference and candidate images are analyzed to find pixels that are invariant over the set. The motivation for this step is removing the effect of change (e.g. clouds or snow) from the normalization transformation calculation. `pif_wrapper.py` has example useage.
 
 ### Input
 * An array representing the image values for a single band in the candidate image
@@ -47,9 +47,9 @@ The reference and candidate images are analyzed to find pixels that are invarian
 ### Output
 * An array to indicate if a pixel is a pseudo invariant feature or not (0 indicates that the pixel is not a valid PIF)
 
-## Radiometric transformation - transformation.py
+## Calculating the radiometric transformation - transformation.py
 
-Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference image.
+Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference image. `transformation_wrapper.py` has example useage.
 
 ### Input
 * An array representing the image values for a single band in the candidate image
@@ -62,9 +62,9 @@ Use the pseudo-invariant features to derive a transformation that will change th
 ### Output
 * A linear transformation (gain and offset) to transform the candidate image to have similar intensities to the reference image
 
-## Radiometric transformation - normalize.py
+## Applying the radiometric transformation - normalize.py
 
-Applies a linear transformation to an image.
+Applies a linear transformation to an image. `normalize_wrapper.py` has example useage.
 
 ### Input
 * An array representing the image values for a single band
