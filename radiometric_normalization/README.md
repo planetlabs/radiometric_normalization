@@ -33,7 +33,7 @@ This module analyzes the set of images and creates a single output image that re
 
 ## Pseudo-invariant feature generation - pif.py
 
-The reference and candidate images are analyzed to find pixels that are invariant over the set. The motivation for this step is removing the effect of change (e.g. clouds or snow) from the normalization transformation calculation. `pif_wrapper.py` has example useage.
+The reference and candidate images are analyzed to find pixels that are invariant over the set. The motivation for this step is removing the effect of change (e.g. clouds or snow) from the normalization transformation calculation. `pif_wrapper.py` has example usage.
 
 ### Input
 * An array representing the image values for a single band in the candidate image
@@ -49,7 +49,7 @@ The reference and candidate images are analyzed to find pixels that are invarian
 
 ## Calculating the radiometric transformation - transformation.py
 
-Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference image. `transformation_wrapper.py` has example useage.
+Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference image. `transformation_wrapper.py` has example usage.
 
 ### Input
 * An array representing the image values for a single band in the candidate image
@@ -64,7 +64,7 @@ Use the pseudo-invariant features to derive a transformation that will change th
 
 ## Applying the radiometric transformation - normalize.py
 
-Applies a linear transformation to an image. `normalize_wrapper.py` has example useage.
+Applies a linear transformation to an image. `normalize_wrapper.py` has example usage.
 
 ### Input
 * An array representing the image values for a single band
