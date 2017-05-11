@@ -114,7 +114,6 @@ def _pca_logging(c_band, r_band, valid_pixels, pif_pixels):
         logging.info('PCA Info: No PIF pixels found.')
 
 
-
 def _pca_fit_and_filter_valid_pixels(candidate_pixels, reference_pixels,
                                      parameters):
     ''' Performs PCA analysis, on the valid pixels and filters according

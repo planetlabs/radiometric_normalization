@@ -83,46 +83,52 @@ class Tests(unittest.TestCase):
 
     def test__sum_masked_array_list(self):
         # Two masked_arrays with two bands of 2 by 2 pixels
-        band_one_1 = numpy.ma.masked_array(numpy.array([[1, 2],[5, 1]],
-                                                       dtype='uint16'),
-                                           mask=numpy.array([[False, True],
-                                                             [False, False]],
-                                                            dtype='bool'))
+        band_one_1 = numpy.ma.masked_array(
+            numpy.array([[1, 2], [5, 1]],
+                        dtype='uint16'),
+            mask=numpy.array([[False, True],
+                              [False, False]],
+                             dtype='bool'))
 
-        band_two_1 = numpy.ma.masked_array(numpy.array([[9, 2],[3, 6]],
-                                                       dtype='uint16'),
-                                           mask=numpy.array([[False, False],
-                                                             [False, False]],
-                                                            dtype='bool'))
+        band_two_1 = numpy.ma.masked_array(
+            numpy.array([[9, 2], [3, 6]],
+                        dtype='uint16'),
+            mask=numpy.array([[False, False],
+                              [False, False]],
+                             dtype='bool'))
 
-        band_one_2 = numpy.ma.masked_array(numpy.array([[6, 3],[7, 8]],
-                                                       dtype='uint16'),
-                                           mask=numpy.array([[True, True],
-                                                             [False, False]],
-                                                            dtype='bool'))
+        band_one_2 = numpy.ma.masked_array(
+            numpy.array([[6, 3], [7, 8]],
+                        dtype='uint16'),
+            mask=numpy.array([[True, True],
+                              [False, False]],
+                             dtype='bool'))
 
-        band_two_2 = numpy.ma.masked_array(numpy.array([[8, 9],[3, 4]],
-                                                       dtype='uint16'),
-                                           mask=numpy.array([[True, True],
-                                                             [False, True]],
-                                                            dtype='bool'))
+        band_two_2 = numpy.ma.masked_array(
+            numpy.array([[8, 9], [3, 4]],
+                        dtype='uint16'),
+            mask=numpy.array([[True, True],
+                              [False, True]],
+                             dtype='bool'))
 
         sum_masked_array = [band_one_1, band_two_1]
         new_masked_array = [band_one_2, band_two_2]
         frequency_array = [numpy.array([[1, 0], [1, 1]]),
                            numpy.array([[1, 1], [1, 1]])]
 
-        golden_band_one = numpy.ma.masked_array(numpy.array([[1, 0],[12, 9]],
-                                                            dtype='uint16'),
-                                                mask=numpy.array([[False, True],
-                                                                  [False, False]],
-                                                                 dtype='bool'))
+        golden_band_one = numpy.ma.masked_array(
+            numpy.array([[1, 0], [12, 9]],
+                        dtype='uint16'),
+            mask=numpy.array([[False, True],
+                              [False, False]],
+                             dtype='bool'))
 
-        golden_band_two = numpy.ma.masked_array(numpy.array([[9, 2],[6, 6]],
-                                                            dtype='uint16'),
-                                                mask=numpy.array([[False, False],
-                                                                  [False, False]],
-                                                                 dtype='bool'))
+        golden_band_two = numpy.ma.masked_array(
+            numpy.array([[9, 2], [6, 6]],
+                        dtype='uint16'),
+            mask=numpy.array([[False, False],
+                              [False, False]],
+                             dtype='bool'))
 
         golden_sum_masked_array = [golden_band_one, golden_band_two]
         golden_frequency_array = [numpy.array([[1, 0], [2, 2]]),
@@ -191,42 +197,45 @@ class Tests(unittest.TestCase):
 
     def test__mean_from_sum(self):
         # A masked array with four bands of 3 by 3 pixels
-        band_one = numpy.ma.masked_array(numpy.array([[1, 2, 5],
-                                                      [7, 3, 4],
-                                                      [8, 6, 2]],
-                                                     dtype='double'),
-                                         mask=numpy.array([[False, False, False],
-                                                           [False, False, True],
-                                                           [False, True, False]],
-                                                          dtype='bool'))
+        band_one = numpy.ma.masked_array(
+            numpy.array([[1, 2, 5],
+                         [7, 3, 4],
+                         [8, 6, 2]],
+                        dtype='double'),
+            mask=numpy.array([[False, False, False],
+                              [False, False, True],
+                              [False, True, False]],
+                             dtype='bool'))
 
-        band_two = numpy.ma.masked_array(numpy.array([[6, 8, 9],
-                                                      [3, 1, 8],
-                                                      [2, 3, 6]],
-                                                     dtype='double'),
-                                         mask=numpy.array([[False, False, False],
-                                                           [False, True, False],
-                                                           [False, True, False]],
-                                                          dtype='bool'))
+        band_two = numpy.ma.masked_array(
+            numpy.array([[6, 8, 9],
+                         [3, 1, 8],
+                         [2, 3, 6]],
+                        dtype='double'),
+            mask=numpy.array([[False, False, False],
+                              [False, True, False],
+                              [False, True, False]],
+                             dtype='bool'))
 
-        band_three = numpy.ma.masked_array(numpy.array([[3, 5, 2],
-                                                        [9, 6, 3],
-                                                        [7, 4, 6]],
-                                                       dtype='double'),
-                                           mask=numpy.array([[True, False, False],
-                                                             [False, False, False],
-                                                             [False, True, False]],
-                                                            dtype='bool'))
+        band_three = numpy.ma.masked_array(
+            numpy.array([[3, 5, 2],
+                         [9, 6, 3],
+                         [7, 4, 6]],
+                        dtype='double'),
+            mask=numpy.array([[True, False, False],
+                              [False, False, False],
+                              [False, True, False]],
+                             dtype='bool'))
 
-
-        band_four = numpy.ma.masked_array(numpy.array([[7, 4, 3],
-                                                       [2, 6, 5],
-                                                       [1, 2, 8]],
-                                                      dtype='double'),
-                                          mask=numpy.array([[False, True, False],
-                                                            [False, True, True],
-                                                            [False, True, False]],
-                                                           dtype='bool'))
+        band_four = numpy.ma.masked_array(
+            numpy.array([[7, 4, 3],
+                         [2, 6, 5],
+                         [1, 2, 8]],
+                        dtype='double'),
+            mask=numpy.array([[False, True, False],
+                              [False, True, True],
+                              [False, True, False]],
+                             dtype='bool'))
 
         sum_masked_array = [band_one, band_two, band_three, band_four]
 
@@ -240,45 +249,51 @@ class Tests(unittest.TestCase):
                        numpy.array([[1, 5, 1], [9, 1, 3], [2, 0, 3]]),
                        numpy.array([[2, 2, 1], [2, 0, 2], [0, 0, 2]])]
 
-        output_mean = time_stack._mean_from_sum(sum_masked_array, frequency_array,
-                                                numpy.uint16)
+        output_mean = time_stack._mean_from_sum(
+            sum_masked_array, frequency_array, numpy.uint16)
 
-        numpy.testing.assert_array_equal(output_mean,
-                                         golden_mean)
+        numpy.testing.assert_array_equal(
+            output_mean, golden_mean)
 
     def test__uniform_weight_alpha(self):
         # Five images of 2 by 2 pixels
-        band_one = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
-                                                     dtype='double'),
-                                         mask=numpy.array([[False, True],
-                                                           [False, False]],
-                                                          dtype='bool'))
+        band_one = numpy.ma.masked_array(
+            numpy.array([[0, 0], [0, 0]],
+                        dtype='double'),
+            mask=numpy.array([[False, True],
+                              [False, False]],
+                             dtype='bool'))
 
-        band_two = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
-                                                     dtype='double'),
-                                         mask=numpy.array([[False, False],
-                                                           [False, False]],
-                                                          dtype='bool'))
+        band_two = numpy.ma.masked_array(
+            numpy.array([[0, 0], [0, 0]],
+                        dtype='double'),
+            mask=numpy.array([[False, False],
+                              [False, False]],
+                             dtype='bool'))
 
-        band_three = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
-                                                       dtype='double'),
-                                           mask=numpy.array([[True, True],
-                                                             [False, False]],
-                                                            dtype='bool'))
+        band_three = numpy.ma.masked_array(
+            numpy.array([[0, 0], [0, 0]],
+                        dtype='double'),
+            mask=numpy.array([[True, True],
+                              [False, False]],
+                             dtype='bool'))
 
-        band_four = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
-                                                       dtype='double'),
-                                           mask=numpy.array([[True, True],
-                                                             [False, True]],
-                                                            dtype='bool'))
+        band_four = numpy.ma.masked_array(
+            numpy.array([[0, 0], [0, 0]],
+                        dtype='double'),
+            mask=numpy.array([[True, True],
+                              [False, True]],
+                             dtype='bool'))
 
-        band_five = numpy.ma.masked_array(numpy.array([[0, 0],[0, 0]],
-                                                       dtype='double'),
-                                           mask=numpy.array([[False, True],
-                                                             [False, True]],
-                                                            dtype='bool'))
+        band_five = numpy.ma.masked_array(
+            numpy.array([[0, 0], [0, 0]],
+                        dtype='double'),
+            mask=numpy.array([[False, True],
+                              [False, True]],
+                             dtype='bool'))
 
-        sum_masked_array = [band_one, band_two, band_three, band_four, band_five]
+        sum_masked_array = [band_one, band_two, band_three,
+                            band_four, band_five]
 
         golden_alpha = numpy.array([[0, 0],
                                     [65535, 0]], dtype='uint16')

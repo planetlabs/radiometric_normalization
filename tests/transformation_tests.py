@@ -30,7 +30,8 @@ class Tests(unittest.TestCase):
         test_pifs = numpy.array([[1, 1, 0, 0],
                                  [0, 0, 1, 1]], dtype=numpy.bool)
 
-        transform = transformation.generate_linear_relationship(test_reference, test_candidate, test_pifs)
+        transform = transformation.generate_linear_relationship(
+            test_reference, test_candidate, test_pifs)
 
         expected_gain = 0.5
         self.assertEqual(transform.gain, expected_gain)

@@ -15,7 +15,8 @@ def parse_requirements(requirements_filename='requirements.txt'):
 
 
 try:
-    patch = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD']).strip()
+    patch = subprocess.check_output(
+        ['git', 'rev-list', '--count', 'HEAD']).strip()
 except:
     patch = 'no-git'
 
