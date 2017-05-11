@@ -2,9 +2,10 @@
 
 The full radiometric normalization workflow is contained within normalize.py. It calls on three analysis modules. 
 
-1. Time stack analysis (time_stack.py)
+1. Time stack analysis (time_stack.py) - DEPRECIATED
 2. Pseudo-invariant feature generation (pif.py)
 3. Radiometric transformation calculation (transformation.py)
+4. Application of the radiometric transformation (normalize.py)
 
 There is also an additional validation module (validation.py). This will be used in regression testing of the library.
 
@@ -32,30 +33,48 @@ This module analyzes the set of images and creates a single output image that re
 
 ## Pseudo-invariant feature generation - pif.py
 
-The reference and candidate images are analyzed to find features that are invariant over the set. The motivation for this step is removing the effect of change (e.g. clouds or snow) from the normalization transformation calculation.
+The reference and candidate images are analyzed to find pixels that are invariant over the set. The motivation for this step is removing the effect of change (e.g. clouds or snow) from the normalization transformation calculation. `pif_wrapper.py` has an example useage.
 
 ### Input
-* A reference image and a satellite image of the same geographic location
-* Both the reference image and the satellite image should contain exactly the same number of pixels (rows and cols)
+* An array representing the image values for a single band in the candidate image
+* An array representing the image values for a single band in the reference image
+* Both the reference image and the satellite image should contain exactly the same number of pixels (rows and cols) and be physically colocated
 
 ### Algorithm
 * Filtering out pixels with no data values: This method simply filters out all pixels that have no data (as indicated by a 0 in the alpha mask at that pixel location)
+* Filtering using PCA fits: This method uses a PCA fit to filter out pixels that do not correspond closely to a linear relationship between the two bands.
 
 ### Output
-* An array to indicate how strong a pseudo invariant feature each pixel is in the image (0 indicates that the pixel is not a valid PIF)
+* An array to indicate if a pixel is a pseudo invariant feature or not (0 indicates that the pixel is not a valid PIF)
 
 ## Radiometric transformation - transformation.py
 
 Use the pseudo-invariant features to derive a transformation that will change the intensity distribution of the candidate image to one that is similar to the reference image.
 
 ### Input
-* The strength of each pixel as a pseudo-invariant feature (a numpy array)
+* An array representing the image values for a single band in the candidate image
+* An array representing the image values for a single band in the reference image
+* An array representing the pseudo invariant features of an image
 
 ### Algorithm
 * Linear relationship: This method simply uses the mean and standard deviations of the data sets to the gain and offset to transform the candidate distribution to the reference distribution.
 
 ### Output
-* A per-band look up table (as a numpy array)
+* A linear transformation (gain and offset) to transform the candidate image to have similar intensities to the reference image
+
+## Radiometric transformation - normalize.py
+
+Applies a linear transformation to an image.
+
+### Input
+* An array representing the image values for a single band
+* A linear transformation (gain and offset)
+
+### Algorithm
+* A look up table is calculated using the transformation and applied to the image bands.
+
+### Output
+* The input band transformed using the linear transformation.
 
 ## Validation - validation.py
 

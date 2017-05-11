@@ -34,7 +34,14 @@ nosetests ./tests
 
 The code in this repo is kept in two directories: 'radiometric_normalization' and 'tests'
 
-'radiometric_normalization' contains the algorithm and functions of the library. 'normalize.py' is the top level module for the full workflow of running radiometric normalization and 'validate.py' is the module for validating radiometric normalization.
+'radiometric_normalization' contains the algorithm and functions of the library:
+* 'time_stack.py' is the module that can calculate a time stack (average image) from a series of images (depreciated).
+* 'pif.py' contains the functions that find pseudo invariant feature pixels on within an image.
+* 'transformation.py' calculates the transformations to make the candidate data more consistent with the reference data.
+* 'normalize.py' is the module that can apply transformations calculated in 'transformation.py' to an image.
+* 'validate.py' is the module for validating radiometric normalization.
+
+Each of the modules referenced above are intended to run on a single band at a time (represented as a numpy array). Examples of more complete functions that can handle image reading and multiple bands are within 'radiometric_normalization/utils'. These will be explained below.
 
 'tests' contain unit tests for the functions in the library.
 
@@ -45,16 +52,46 @@ The example below demonstrates the generation of per-band linear transformations
 
 `candidate_path` is a string specifying the location of the candidate image on disk. `reference_paths` is a list of strings, each specifying the location of a reference image on disk. `transformations` is a list of tuples, each specifying the gain (first entry) and offset (second entry) that will normalize the respective band of the candidate image.
 
+Below is an example using two Landsat8 tiles: LC08_L1TP_044034_20170427_20170428_01_RT_B3 and LC08_L1TP_044034_20170105_20170218_01_T1_B3
+
 ```python
 
-time_stack.generate(reference_paths, 'time_stack.tif',
-    method='mean_with_uniform_weight')
+from radiometric_normalization.utils import pif_wrapper
+from radiometric_normalization.utils import transformation_wrapper
+from radiometric_normalization.utils import normalize_wrapper
+from radiometric_normalization import gimage
+from radiometric_normalization import pif
 
-pif_weight, reference_img, candidate_img = pif.generate(
-    candidate_path, reference_path='time_stack.tif',
-    method='filter_nodata')
+## OPTIONAL
+import numpy
+import subprocess
+from osgeo import gdal
+##
 
-transformations = transformation.generate(
-    pif_weight, reference_img, candidate_img,
-    method='linear_relationship')
+## OPTIONAL - Cut dataset to coincident sub scenes
+full_candidate_path = 'LC08_L1TP_044034_20170427_20170428_01_RT_B3.TIF'
+full_reference_path = 'LC08_L1TP_044034_20170105_20170218_01_T1_B3.TIF'  # Older scene
+candidate_path = 'candidate.tif'
+reference_path = 'reference.tif'
+subprocess.check_call(['gdal_translate', '-projwin', '545000', '4136000', '601000', '4084000', full_candidate_path, candidate_path])
+subprocess.check_call(['gdal_translate', '-projwin', '545000', '4136000', '601000', '4084000', full_reference_path, reference_path])
+##
+
+pif_mask = pif_wrapper.generate(candidate_path, reference_path, method='filter_alpha')
+
+## OPTIONAL - Save out the PIF mask
+candidate_ds = gdal.Open(candidate_path)
+metadata = gimage.read_metadata(candidate_ds)
+pif_gimg = gimage.GImage([pif_mask], numpy.ones(pif_mask.shape, dtype=numpy.bool), metadata)
+gimage.save(pif_gimg, 'PIF_pixels.tif')
+##
+
+transformations = transformation_wrapper.generate(candidate_path, reference_path, pif_mask, method='linear_relationship')
+
+## OPTIONAL - View the transformations
+print transformations
+##
+
+normalised_gimg = normalize_wrapper.generate(candidate_path, transformations)
+gimage.save(normalised_gimg, 'normalized.tif')
 ```
