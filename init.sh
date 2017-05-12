@@ -19,12 +19,17 @@ sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
 
 sudo apt-get update
 sudo apt-get install -y --force-yes \
-    build-essential python-dev \
-    python-pip python-numpy \
-    python-nose python-nosexcover pylint pep8 \
+    build-essential pylint pep8 \
+	libatlas-dev libatlas3gf-base \
+    python-dev \
+    python-pip \
+    python-numpy \
+    python-nose \
+    python-nosexcover \
     python-gdal \
-    python-setuptools python-scipy \
-	libatlas-dev libatlas3gf-base
+    python-setuptools \
+    python-scipy \
+    python-matplotlib \
 
 # install radiometric_normalization
 echo $TOP | sudo tee /usr/local/lib/python2.7/dist-packages/radiometric_normalization.pth

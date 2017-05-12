@@ -55,11 +55,11 @@ def plot_histograms(file_name, candidate_data_multiple_bands,
     plt.hold(True)
     for colour, c_band in zip(colour_order, candidate_data_multiple_bands):
         c_bh, c_bins = numpy.histogram(c_band, bins=256)
-        plt.plot(c_bins[:-1], c_bh, colour, '-', linewidth=2)
+        plt.plot(c_bins[:-1], c_bh, color=colour, linestyle='-', linewidth=2)
     if reference_data_multiple_bands:
         for colour, r_band in zip(colour_order, reference_data_multiple_bands):
             r_bh, r_bins = numpy.histogram(r_band, bins=256)
-            plt.plot(r_bins[:-1], r_bh, colour, '--', linewidth=2)
+            plt.plot(r_bins[:-1], r_bh, color=colour, linestyle='--', linewidth=2)
     plt.xlabel('DN')
     plt.ylabel('Number of pixels')
     if x_limits:

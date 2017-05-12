@@ -41,7 +41,7 @@ def create_all_bands_histograms(candidate_path, reference_path, base_name):
     c_gimg = gimage.load(candidate_path)
     r_gimg = gimage.load(reference_path)
 
-    gimage.check_comparable(c_gimg, r_gimg)
+    gimage.check_comparable([c_gimg, r_gimg])
 
     combined_alpha = numpy.logical_and(c_gimg.alpha, r_gimg.alpha)
     valid_pixels = numpy.nonzero(combined_alpha)
@@ -56,7 +56,8 @@ def create_all_bands_histograms(candidate_path, reference_path, base_name):
 
 def _open_image_and_get_info(path):
     gdal_ds = gdal.Open(path)
-    alpha_band, band_count = gimage.read_alpha_and_band_count(gdal_ds)
+    alpha_band, band_count = gimage.read_alpha_and_band_count(
+        gdal_ds, last_band_alpha=True)
     return gdal_ds, alpha_band, band_count
 
 

@@ -66,6 +66,7 @@ from radiometric_normalization import pif
 import numpy
 import subprocess
 from osgeo import gdal
+from radiometric_normalization.utils import display_wrapper
 ##
 
 ## OPTIONAL - Cut dataset to coincident sub scenes
@@ -93,5 +94,13 @@ print transformations
 ##
 
 normalised_gimg = normalize_wrapper.generate(candidate_path, transformations)
-gimage.save(normalised_gimg, 'normalized.tif')
+result_path = 'normalized.tif'
+gimage.save(normalised_gimg, result_path)
+
+## OPTIONAL - View the effect on the pixels
+display_wrapper.create_pixel_plots(candidate_path, reference_path, 'Original')
+display_wrapper.create_pixel_plots(result_path, reference_path, 'Transformed')
+display_wrapper.create_all_bands_histograms(candidate_path, reference_path, 'Original')
+display_wrapper.create_all_bands_histograms(result_path, reference_path, 'Transformed')
+##
 ```

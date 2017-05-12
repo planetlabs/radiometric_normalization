@@ -40,7 +40,7 @@ def _create_ds(gimage, filename, compress):
     # Alpha is saved as the last band
     band_count = len(gimage.bands) + 1
 
-    options = ['PHOTOMETRIC=RGB', 'ALPHA=YES']
+    options = ['PHOTOMETRIC=RGB']
     if compress:
         options.append('COMPRESS=DEFLATE')
         options.append('PREDICTOR=2')
@@ -79,14 +79,14 @@ def _save_to_ds(gimage, gdal_ds, nodata=None):
         gdal_ds.SetMetadata(gimage.metadata['rpc'], 'RPC')
 
 
-def load(filename, nodata=None):
+def load(filename, nodata=None, last_band_alpha=False):
     logging.debug("Loading {} as GImage.".format(filename))
     gdal_ds = gdal.Open(filename)
     if gdal_ds is None:
         raise Exception('Unable to open file "{}" with gdal.Open()'.format(
             filename))
 
-    alpha, band_count = read_alpha_and_band_count(gdal_ds)
+    alpha, band_count = read_alpha_and_band_count(gdal_ds, last_band_alpha)
     bands = _read_all_bands(gdal_ds, band_count)
     metadata = read_metadata(gdal_ds)
 
@@ -137,12 +137,16 @@ def read_single_band(gdal_ds, band_no):
     return array.astype(numpy.uint16)
 
 
-def read_alpha_and_band_count(gdal_ds):
+def read_alpha_and_band_count(gdal_ds, last_band_alpha=False):
     logging.debug('Initial band count: {}'.format(
         gdal_ds.RasterCount))
     last_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     if last_band.GetColorInterpretation() == gdal.GCI_AlphaBand:
         logging.debug('Alpha band found, reducing band count')
+        alpha = last_band.ReadAsArray().astype(numpy.bool)
+        band_count = gdal_ds.RasterCount - 1
+    elif last_band_alpha:
+        logging.debug('Forcing last band to be an alpha band, reducing band count')
         alpha = last_band.ReadAsArray().astype(numpy.bool)
         band_count = gdal_ds.RasterCount - 1
     else:
