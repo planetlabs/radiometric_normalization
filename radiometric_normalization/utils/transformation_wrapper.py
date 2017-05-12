@@ -17,7 +17,7 @@ from radiometric_normalization import transformation
 
 
 def generate(candidate_path, reference_path, pif_mask,
-             method='linear_relationship'):
+             method='linear_relationship', last_band_alpha=False):
     ''' Calculates the transformations between the PIF pixels of the candidate
     image and PIF pixels of the reference image.
 
@@ -30,8 +30,10 @@ def generate(candidate_path, reference_path, pif_mask,
     :returns: A list of linear transformations (one for each band)
     '''
     if method == 'linear_relationship':
-        c_ds, c_alpha, c_band_count = _open_image_and_get_info(candidate_path)
-        r_ds, r_alpha, r_band_count = _open_image_and_get_info(reference_path)
+        c_ds, c_alpha, c_band_count = _open_image_and_get_info(
+            candidate_path, last_band_alpha)
+        r_ds, r_alpha, r_band_count = _open_image_and_get_info(
+            reference_path, last_band_alpha)
 
         _assert_consistent(c_alpha, r_alpha, c_band_count, r_band_count)
 
@@ -49,9 +51,10 @@ def generate(candidate_path, reference_path, pif_mask,
     return transformations
 
 
-def _open_image_and_get_info(path):
+def _open_image_and_get_info(path, last_band_alpha):
     gdal_ds = gdal.Open(path)
-    alpha_band, band_count = gimage.read_alpha_and_band_count(gdal_ds)
+    alpha_band, band_count = gimage.read_alpha_and_band_count(
+        gdal_ds, last_band_alpha=last_band_alpha)
     return gdal_ds, alpha_band, band_count
 
 

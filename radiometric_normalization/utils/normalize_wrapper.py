@@ -16,7 +16,7 @@ from radiometric_normalization import gimage
 from radiometric_normalization import normalize
 
 
-def generate(image_path, per_band_transformation):
+def generate(image_path, per_band_transformation, last_band_alpha=False):
     '''Applies a set of linear transformations to a gimage
 
     :param str image_path: The path to an image
@@ -25,7 +25,8 @@ def generate(image_path, per_band_transformation):
     :param output: A gimage that represents input_gimage with transformations
         applied
     '''
-    img_ds, img_alpha, band_count = _open_image_and_get_info(image_path)
+    img_ds, img_alpha, band_count = _open_image_and_get_info(
+        image_path, last_band_alpha)
     img_metadata = gimage.read_metadata(img_ds)
 
     _assert_consistent(band_count, per_band_transformation)
@@ -39,9 +40,10 @@ def generate(image_path, per_band_transformation):
     return gimage.GImage(output_bands, img_alpha, img_metadata)
 
 
-def _open_image_and_get_info(path):
+def _open_image_and_get_info(path, last_band_alpha):
     gdal_ds = gdal.Open(path)
-    alpha_band, band_count = gimage.read_alpha_and_band_count(gdal_ds)
+    alpha_band, band_count = gimage.read_alpha_and_band_count(
+        gdal_ds, last_band_alpha=last_band_alpha)
     return gdal_ds, alpha_band, band_count
 
 

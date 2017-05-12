@@ -20,9 +20,12 @@ from radiometric_normalization import display
 from radiometric_normalization import gimage
 
 
-def create_pixel_plots(candidate_path, reference_path, base_name):
-    c_ds, c_alpha, c_band_count = _open_image_and_get_info(candidate_path)
-    r_ds, r_alpha, r_band_count = _open_image_and_get_info(reference_path)
+def create_pixel_plots(candidate_path, reference_path, base_name,
+                       last_band_alpha=False, limits=None):
+    c_ds, c_alpha, c_band_count = _open_image_and_get_info(
+        candidate_path, last_band_alpha)
+    r_ds, r_alpha, r_band_count = _open_image_and_get_info(
+        reference_path, last_band_alpha)
 
     _assert_consistent(c_alpha, r_alpha, c_band_count, r_band_count)
 
@@ -34,12 +37,15 @@ def create_pixel_plots(candidate_path, reference_path, base_name):
         r_band = gimage.read_single_band(r_ds, band_no)
         file_name = '{}_{}.png'.format(base_name, band_no)
         display.plot_pixels(file_name, c_band[valid_pixels],
-                            r_band[valid_pixels], [0, 25000])
+                            r_band[valid_pixels], limits)
 
 
-def create_all_bands_histograms(candidate_path, reference_path, base_name):
-    c_gimg = gimage.load(candidate_path, last_band_alpha=True)
-    r_gimg = gimage.load(reference_path, last_band_alpha=True)
+def create_all_bands_histograms(candidate_path, reference_path, base_name,
+                                last_band_alpha=False,
+                                color_order=['b', 'g', 'r', 'y'],
+                                x_limits=None, y_limits=None):
+    c_gimg = gimage.load(candidate_path, last_band_alpha=last_band_alpha)
+    r_gimg = gimage.load(reference_path, last_band_alpha=last_band_alpha)
 
     gimage.check_comparable([c_gimg, r_gimg])
 
@@ -51,13 +57,13 @@ def create_all_bands_histograms(candidate_path, reference_path, base_name):
         file_name,
         [c_band[valid_pixels] for c_band in c_gimg.bands],
         [r_band[valid_pixels] for r_band in r_gimg.bands],
-        colour_order=['b', 'g', 'r', 'y'])
+        color_order, x_limits, y_limits)
 
 
-def _open_image_and_get_info(path):
+def _open_image_and_get_info(path, last_band_alpha):
     gdal_ds = gdal.Open(path)
     alpha_band, band_count = gimage.read_alpha_and_band_count(
-        gdal_ds, last_band_alpha=True)
+        gdal_ds, last_band_alpha=last_band_alpha)
     return gdal_ds, alpha_band, band_count
 
 

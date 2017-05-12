@@ -90,7 +90,7 @@ def load(filename, nodata=None, last_band_alpha=False):
     bands = _read_all_bands(gdal_ds, band_count)
     metadata = read_metadata(gdal_ds)
 
-    if nodata is not None:
+    if nodata:
         alpha = alpha * _nodata_to_mask(bands, nodata)
     return GImage(bands, alpha, metadata)
 
@@ -146,7 +146,8 @@ def read_alpha_and_band_count(gdal_ds, last_band_alpha=False):
         alpha = last_band.ReadAsArray().astype(numpy.bool)
         band_count = gdal_ds.RasterCount - 1
     elif last_band_alpha:
-        logging.debug('Forcing last band to be an alpha band, reducing band count')
+        logging.debug(
+            'Forcing last band to be an alpha band, reducing band count')
         alpha = last_band.ReadAsArray().astype(numpy.bool)
         band_count = gdal_ds.RasterCount - 1
     else:
@@ -154,6 +155,7 @@ def read_alpha_and_band_count(gdal_ds, last_band_alpha=False):
         alpha = numpy.ones(
             (gdal_ds.RasterYSize, gdal_ds.RasterXSize),
             dtype=numpy.bool)
+        print alpha
         band_count = gdal_ds.RasterCount
     return alpha, band_count
 
