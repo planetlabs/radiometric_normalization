@@ -38,8 +38,8 @@ def create_pixel_plots(candidate_path, reference_path, base_name):
 
 
 def create_all_bands_histograms(candidate_path, reference_path, base_name):
-    c_gimg = gimage.load(candidate_path)
-    r_gimg = gimage.load(reference_path)
+    c_gimg = gimage.load(candidate_path, last_band_alpha=True)
+    r_gimg = gimage.load(reference_path, last_band_alpha=True)
 
     gimage.check_comparable([c_gimg, r_gimg])
 
