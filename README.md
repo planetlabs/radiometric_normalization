@@ -113,10 +113,15 @@ temporary_gimg = gimage.GImage([band_gimgs[b].bands[0] for b in ['blue', 'green'
 gimage.save(temporary_gimg, reference_path)
 ##
 
-pif_mask = pif_wrapper.generate(candidate_path, reference_path, method='filter_alpha', last_band_alpha=True)
+parameters = pif.pca_options(limit=100)
+pif_mask = pif_wrapper.generate(candidate_path, reference_path, method='filter_PCA', last_band_alpha=True, method_options=parameters)
 
 ## OPTIONAL - Save out the PIF mask
-# It will just be all ones in this specific case but should not be with other options
+no_total_pixels = combined_alpha.size
+no_valid_pixels = len(numpy.nonzero(pif_mask)[0])
+valid_percent = 100.0 * no_valid_pixels / no_total_pixels
+logging.info('PCA Info: Found {} final pifs out of {} pixels ({}%) for all bands'.format(no_valid_pixels, no_total_pixels, valid_percent))
+
 candidate_ds = gdal.Open(candidate_path)
 metadata = gimage.read_metadata(candidate_ds)
 pif_gimg = gimage.GImage([pif_mask], numpy.ones(pif_mask.shape, dtype=numpy.bool), metadata)
@@ -135,21 +140,18 @@ gimage.save(normalised_gimg, result_path)
 
 ## OPTIONAL - View the effect on the pixels (SLOW)
 from radiometric_normalization.utils import display_wrapper
-candidate_path = 'candidate.tif'
-reference_path = 'reference.tif'
-result_path = 'normalized.tif'
 display_wrapper.create_pixel_plots(candidate_path, reference_path, 'Original', limits=[0, 30000], last_band_alpha=True)
 display_wrapper.create_pixel_plots(result_path, reference_path, 'Transformed', limits=[0, 30000], last_band_alpha=True)
-display_wrapper.create_all_bands_histograms(candidate_path, reference_path, 'Original', x_limits=[0, 30000], last_band_alpha=True)
-display_wrapper.create_all_bands_histograms(result_path, reference_path, 'Transformed', x_limits=[0, 30000], last_band_alpha=True)
+display_wrapper.create_all_bands_histograms(candidate_path, reference_path, 'Original', x_limits=[4000, 25000], last_band_alpha=True)
+display_wrapper.create_all_bands_histograms(result_path, reference_path, 'Transformed', x_limits=[4000, 25000], last_band_alpha=True)
 ##
 ```
 
 In the above example, the 'reference.tif', original candidate scene ('candidate.tif') and radiometrically normalized candidate scene ('normalized.tif') all displayed at the same intensity scale: 
 
-| Reference | Original | Transformed |
-| --- | --- | --- |
-| ![Reference](images/Reference.jpg?raw=true) | ![Original](images/Original.jpg?raw=true)| ![Transformed](images/Transformed.jpg?raw=true) |
+| Reference | Original | Transformed | PIF (red pixels) over Reference |
+| --- | --- | --- | --- |
+| ![Reference](images/Reference.jpg?raw=true) | ![Original](images/Original.jpg?raw=true)| ![Transformed](images/Transformed.jpg?raw=true) | ![PIF](images/PIF.jpg?raw=true) |
 
 
 You can compare the per-band DN to DN plots and the histograms of the reference image with the original candidate image and with the normalized candidate image:
