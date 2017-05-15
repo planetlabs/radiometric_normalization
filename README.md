@@ -117,11 +117,6 @@ parameters = pif.pca_options(limit=100)
 pif_mask = pif_wrapper.generate(candidate_path, reference_path, method='filter_PCA', last_band_alpha=True, method_options=parameters)
 
 ## OPTIONAL - Save out the PIF mask
-no_total_pixels = combined_alpha.size
-no_valid_pixels = len(numpy.nonzero(pif_mask)[0])
-valid_percent = 100.0 * no_valid_pixels / no_total_pixels
-logging.info('PCA Info: Found {} final pifs out of {} pixels ({}%) for all bands'.format(no_valid_pixels, no_total_pixels, valid_percent))
-
 candidate_ds = gdal.Open(candidate_path)
 metadata = gimage.read_metadata(candidate_ds)
 pif_gimg = gimage.GImage([pif_mask], numpy.ones(pif_mask.shape, dtype=numpy.bool), metadata)

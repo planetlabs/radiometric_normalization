@@ -68,7 +68,8 @@ def _save_to_ds(gimage, gdal_ds, nodata=None):
     # Last band is alpha
     alpha_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     alpha_band.SetColorInterpretation(gdal.GCI_AlphaBand)
-    gdal_array.BandWriteArray(alpha_band, gimage.alpha.astype(numpy.uint16) * 255)
+    gdal_array.BandWriteArray(alpha_band,
+                              gimage.alpha.astype(numpy.uint16) * 255)
 
     # Save georeferencing information
     if 'projection' in gimage.metadata.keys():

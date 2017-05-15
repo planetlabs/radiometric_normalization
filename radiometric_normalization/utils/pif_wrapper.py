@@ -10,6 +10,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 '''
+import logging
 import numpy
 
 from osgeo import gdal
@@ -63,6 +64,13 @@ def generate(candidate_path, reference_path,
             pif_band_mask = pif.generate_pca_pifs(
                 c_band, c_alpha, r_band, r_alpha, parameters)
             pif_mask = numpy.logical_and(pif_mask, pif_band_mask)
+
+        no_total_pixels = c_alpha.size
+        no_valid_pixels = len(numpy.nonzero(pif_mask)[0])
+        valid_percent = 100.0 * no_valid_pixels / no_total_pixels
+        logging.info(
+            'PCA Info: Found {} final pifs out of {} pixels ({}%) for all '
+            'bands'.format(no_valid_pixels, no_total_pixels, valid_percent))
     else:
         raise NotImplementedError("Only 'filter_alpha' and 'filter_PCA' "
                                   "methods are implemented.")
