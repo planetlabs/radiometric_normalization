@@ -21,7 +21,7 @@ def apply(input_band, transformation):
     '''Applies a linear transformation to an array
 
     :param array input_band: A 2D array representing the image data of the
-                             a single band
+        a single band
     :param LinearTransformation transformation: A LinearTransformation
         (gain and offset)
 

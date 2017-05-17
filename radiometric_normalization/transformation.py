@@ -16,6 +16,9 @@ limitations under the License.
 import numpy
 import logging
 from collections import namedtuple
+from scipy.stats import linregress
+
+from radiometric_normalization import robust
 
 
 # Gain and offset are floats
@@ -57,6 +60,58 @@ def generate_linear_relationship(candidate_band, reference_band, pif_mask):
     gain = calculate_gain(c_std, r_std)
     offset = r_mean - gain * c_mean
 
+    logging.info("Transformation: gain {}, offset {}".format(gain, offset))
+
+    return LinearTransformation(gain, offset)
+
+
+def generate_ols_regression(candidate_band, reference_band, pif_mask):
+    ''' Performs PCA analysis on the valid pixels and filters according
+    to the distance from the principle eigenvector.
+
+    :param array candidate_band: A 2D array representing the image data of the
+                                 candidate band
+    :param array reference_band: A 2D array representing the image data of the
+                                  reference image
+    :param array pif_mask: A 2D array representing the PIF pixels in the images
+
+    :returns: A LinearTransformation object (gain and offset)
+    '''
+    logging.info('Transformation: Calculating ordinary least squares '
+                 'regression transformations')
+
+    candidate_pifs = candidate_band[numpy.nonzero(pif_mask)]
+    reference_pifs = reference_band[numpy.nonzero(pif_mask)]
+
+    gain, offset, r_value, p_value, std_err = linregress(
+        candidate_pifs, reference_pifs)
+    logging.info(
+        'Fit statistics: r_value = {}, p_value = {}, std_err = {}'.format(
+            r_value, p_value, std_err))
+    logging.info("Transformation: gain {}, offset {}".format(gain, offset))
+
+    return LinearTransformation(gain, offset)
+
+
+def generate_robust_fit(candidate_band, reference_band, pif_mask):
+    ''' Performs PCA analysis on the valid pixels and filters according
+    to the distance from the principle eigenvector.
+
+    :param array candidate_band: A 2D array representing the image data of the
+                                 candidate band
+    :param array reference_band: A 2D array representing the image data of the
+                                  reference image
+    :param array pif_mask: A 2D array representing the PIF pixels in the images
+
+    :returns: A LinearTransformation object (gain and offset)
+    '''
+    logging.info('Transformation: Calculating robust fit '
+                 'transformations')
+
+    candidate_pifs = candidate_band[numpy.nonzero(pif_mask)]
+    reference_pifs = reference_band[numpy.nonzero(pif_mask)]
+
+    gain, offset = robust.fit(candidate_pifs, reference_pifs)
     logging.info("Transformation: gain {}, offset {}".format(gain, offset))
 
     return LinearTransformation(gain, offset)
