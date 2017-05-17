@@ -42,8 +42,9 @@ def generate(candidate_path, reference_path,
             reference_path, last_band_alpha)
 
         _assert_consistent(c_alpha, r_alpha, c_band_count, r_band_count)
+        combined_alpha = numpy.logical_and(c_alpha, r_alpha)
 
-        pif_mask = pif.generate_alpha_band_pifs(c_alpha, r_alpha)
+        pif_mask = pif.generate_alpha_band_pifs(combined_alpha)
     elif method == 'filter_PCA':
         c_ds, c_alpha, c_band_count = _open_image_and_get_info(
             candidate_path, last_band_alpha)
@@ -51,6 +52,7 @@ def generate(candidate_path, reference_path,
             reference_path, last_band_alpha)
 
         _assert_consistent(c_alpha, r_alpha, c_band_count, r_band_count)
+        combined_alpha = numpy.logical_and(c_alpha, r_alpha)
 
         if method_options:
             parameters = method_options
@@ -59,10 +61,11 @@ def generate(candidate_path, reference_path,
 
         pif_mask = numpy.ones(c_alpha.shape, dtype=numpy.bool)
         for band_no in range(1, c_band_count + 1):
+            logging.info('PCA Info: Band {}'.format(band_no))
             c_band = gimage.read_single_band(c_ds, band_no)
             r_band = gimage.read_single_band(r_ds, band_no)
             pif_band_mask = pif.generate_pca_pifs(
-                c_band, c_alpha, r_band, r_alpha, parameters)
+                c_band, r_band, combined_alpha, parameters)
             pif_mask = numpy.logical_and(pif_mask, pif_band_mask)
 
         no_total_pixels = c_alpha.size

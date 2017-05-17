@@ -21,7 +21,7 @@ from radiometric_normalization import gimage
 
 
 def create_pixel_plots(candidate_path, reference_path, base_name,
-                       last_band_alpha=False, limits=None):
+                       last_band_alpha=False, limits=None, custom_alpha=None):
     c_ds, c_alpha, c_band_count = _open_image_and_get_info(
         candidate_path, last_band_alpha)
     r_ds, r_alpha, r_band_count = _open_image_and_get_info(
@@ -29,7 +29,10 @@ def create_pixel_plots(candidate_path, reference_path, base_name,
 
     _assert_consistent(c_alpha, r_alpha, c_band_count, r_band_count)
 
-    combined_alpha = numpy.logical_and(c_alpha, r_alpha)
+    if custom_alpha != None:
+        combined_alpha = custom_alpha
+    else:
+        combined_alpha = numpy.logical_and(c_alpha, r_alpha)
     valid_pixels = numpy.nonzero(combined_alpha)
 
     for band_no in range(1, c_band_count + 1):
