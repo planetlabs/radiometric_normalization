@@ -128,7 +128,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(saved_nodata, 3)
 
         saved_alpha = test_ds.GetRasterBand(2).ReadAsArray()
-        numpy.testing.assert_array_equal(saved_alpha, self.mask)
+        numpy.testing.assert_array_equal(saved_alpha, self.mask * 255)
 
         os.unlink(output_file)
 
