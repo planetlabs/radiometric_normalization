@@ -52,7 +52,7 @@ The example below demonstrates the generation of per-band linear transformations
 
 `candidate_path` is a string specifying the location of the candidate image on disk. `reference_paths` is a list of strings, each specifying the location of a reference image on disk. `transformations` is a list of tuples, each specifying the gain (first entry) and offset (second entry) that will normalize the respective band of the candidate image.
 
-Below is an example using two Landsat8 tiles: LC08_L1TP_044034_20170427_20170428_01_RT_B3 and LC08_L1TP_044034_20170105_20170218_01_T1_B3
+Below is an example using two Landsat8 tiles: `LC08_L1TP_044034_20170427_20170428_01_T1` and `LC08_L1TP_044034_20170105_20170218_01_RT`.
 
 ```python
 

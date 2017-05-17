@@ -31,6 +31,23 @@ This module analyzes the set of images and creates a single output image that re
 * The image contains data derived from the set of input images
 * The datatype is always uint16
 
+## Filtering - filtering.py
+
+This module has some rough filters so that the fits calculated below are not influenced by outliers too much.
+
+### 
+* An array representing the image values for a single band in the candidate image
+* An array representing the image values for a single band in the reference image
+* A boolean mask representing the valid pixels in both images (0 indicates that the pixel is not valid)
+* Both the reference image and the satellite image should contain exactly the same number of pixels (rows and cols) and be physically colocated
+
+### Algorithm
+* Filtering using a line: Uses the distance of a point from a line in candidate DN to reference DN space.
+* Filtering using a histogram: Uses a 2D histogram of the population of candidate DN and reference DN values.
+
+### Output
+* An array to indicate if a pixel is a valid or not (0 indicates that the pixel is not valid)
+
 ## Pseudo-invariant feature generation - pif.py
 
 The reference and candidate images are analyzed to find pixels that are invariant over the set. The motivation for this step is removing the effect of change (e.g. clouds or snow) from the normalization transformation calculation. `pif_wrapper.py` has example usage.
@@ -38,11 +55,13 @@ The reference and candidate images are analyzed to find pixels that are invarian
 ### Input
 * An array representing the image values for a single band in the candidate image
 * An array representing the image values for a single band in the reference image
+* A boolean mask representing the valid pixels in both images (0 indicates that the pixel is not valid)
 * Both the reference image and the satellite image should contain exactly the same number of pixels (rows and cols) and be physically colocated
 
 ### Algorithm
 * Filtering out pixels with no data values: This method simply filters out all pixels that have no data (as indicated by a 0 in the alpha mask at that pixel location)
 * Filtering using PCA fits: This method uses a PCA fit to filter out pixels that do not correspond closely to a linear relationship between the two bands.
+* Filtering using robust fits: This method uses a robust linear fit on the data and a threshold around this fit to find PIF pixels.
 
 ### Output
 * An array to indicate if a pixel is a pseudo invariant feature or not (0 indicates that the pixel is not a valid PIF)
@@ -54,10 +73,12 @@ Use the pseudo-invariant features to derive a transformation that will change th
 ### Input
 * An array representing the image values for a single band in the candidate image
 * An array representing the image values for a single band in the reference image
-* An array representing the pseudo invariant features of an image
+* An array representing the pseudo invariant features of an image (0 indicates that the pixel is not a valid PIF)
 
 ### Algorithm
 * Linear relationship: This method simply uses the mean and standard deviations of the data sets to the gain and offset to transform the candidate distribution to the reference distribution.
+* Ordinary least squares regression: This method uses OLS regression to try and find the transformation.
+* robust fit: This method uses various robust fitting methods to try and find the transformation.
 
 ### Output
 * A linear transformation (gain and offset) to transform the candidate image to have similar intensities to the reference image
