@@ -17,8 +17,43 @@ import logging
 import numpy
 
 
-def apply(input_band, transformation):
-    '''Applies a linear transformation to an array
+def apply(input_band, transformation, method='lut'):
+    '''Applies a linear transformation to an array. Wrapper function around
+    the two methods.
+
+    :param array input_band: A 2D array representing the image data of the
+        a single band
+    :param LinearTransformation transformation: A LinearTransformation
+        (gain and offset)
+
+    :returns: A 2D array of of the input_band with the transformation applied
+    '''
+    if method == 'direct':
+        return apply_directly(input_band, transformation)
+    else:
+        return apply_using_lut(input_band, transformation)
+
+
+def apply_directly(input_band, transformation):
+    '''Applies a linear transformation to an array directly. It will output
+    an array of float values. This is not very memory efficient.
+
+    :param array input_band: A 2D array representing the image data of the
+        a single band
+    :param LinearTransformation transformation: A LinearTransformation
+        (gain and offset)
+
+    :returns: A 2D array of of the input_band with the transformation applied
+    '''
+    gain = transformation.gain
+    offset = transformation.offset
+    return input_band.astype('float') * gain + offset
+
+
+def apply_using_lut(input_band, transformation):
+    '''Applies a linear transformation to an array using a look up table.
+    This creates a uint16 array as the output and clips the output band
+    to the range of a uint16.
 
     :param array input_band: A 2D array representing the image data of the
         a single band
