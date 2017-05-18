@@ -85,6 +85,7 @@ def filter_by_residuals_from_line(candidate_band, reference_band,
 
     mask = numpy.zeros(candidate_band.shape, dtype=numpy.bool)
     mask[numpy.nonzero(residual_band < threshold)] = 1
+    mask[numpy.nonzero(numpy.logical_not(combined_alpha))] = 0
     return mask
 
 
