@@ -32,23 +32,21 @@ GImage = namedtuple('GImage', 'bands, alpha, metadata')
 
 
 def save(gimage, filename, nodata=None, compress=True):
-    gdal_ds = _create_ds(gimage, filename, compress)
+    band_count = len(gimage.bands) + 1
+    ysize, xsize = gimage.bands[0].shape
+    gdal_ds = create_ds(filename, xsize, ysize, band_count, compress)
     _save_to_ds(gimage, gdal_ds, nodata)
 
 
-def _create_ds(gimage, filename, compress):
-    # Alpha is saved as the last band
-    band_count = len(gimage.bands) + 1
-
+def create_ds(file_name, xsize, ysize, band_count, compress=True):
     options = ['PHOTOMETRIC=RGB']
     if compress:
         options.append('COMPRESS=DEFLATE')
         options.append('PREDICTOR=2')
 
     datatype = gdal.GDT_UInt16
-    ysize, xsize = gimage.bands[0].shape
     gdal_ds = gdal.GetDriverByName('GTIFF').Create(
-        filename, xsize, ysize, band_count, datatype,
+        file_name, xsize, ysize, band_count, datatype,
         options=options)
     return gdal_ds
 
@@ -60,24 +58,33 @@ def _save_to_ds(gimage, gdal_ds, nodata=None):
 
     # Image bands
     for i, band in enumerate(gimage.bands):
-        gdal_array.BandWriteArray(
-            gdal_ds.GetRasterBand(i + 1), band)
-        if nodata is not None:
-            gdal_ds.GetRasterBand(i + 1).SetNoDataValue(nodata)
+        save_band(gdal_ds, band, i + 1, nodata)
+    save_alpha_band(gdal_ds, gimage.alpha)
+    save_metadata(gdal_ds, gimage.metadata)
 
-    # Last band is alpha
+
+def save_band(gdal_ds, band_array, band_no, nodata=None):
+    gdal_band = gdal_ds.GetRasterBand(band_no)
+    gdal_array.BandWriteArray(gdal_band, band_array)
+    if nodata is not None:
+        gdal_band.SetNoDataValue(nodata)
+
+
+def save_alpha_band(gdal_ds, alpha_array):
     alpha_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     alpha_band.SetColorInterpretation(gdal.GCI_AlphaBand)
     gdal_array.BandWriteArray(alpha_band,
-                              gimage.alpha.astype(numpy.uint16) * 255)
+                              alpha_array.astype(numpy.uint16) * 255)
 
+
+def save_metadata(gdal_ds, metadata):
     # Save georeferencing information
-    if 'projection' in gimage.metadata.keys():
-        gdal_ds.SetProjection(gimage.metadata['projection'])
-    if 'geotransform' in gimage.metadata.keys():
-        gdal_ds.SetGeoTransform(gimage.metadata['geotransform'])
-    if 'rpc' in gimage.metadata.keys():
-        gdal_ds.SetMetadata(gimage.metadata['rpc'], 'RPC')
+    if 'projection' in metadata.keys():
+        gdal_ds.SetProjection(metadata['projection'])
+    if 'geotransform' in metadata.keys():
+        gdal_ds.SetGeoTransform(metadata['geotransform'])
+    if 'rpc' in metadata.keys():
+        gdal_ds.SetMetadata(metadata['rpc'], 'RPC')
 
 
 def load(filename, nodata=None, last_band_alpha=False):
