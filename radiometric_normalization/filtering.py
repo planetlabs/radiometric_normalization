@@ -191,13 +191,12 @@ def filter_by_histogram(candidate_band, reference_band,
               candidate_data, reference_data)])
     else:
         logging.debug('Filtering: Exact filtering by bins')
-        candidate_bin_ids = numpy.digitize(candidate_data, candidate_bins)
-        reference_bin_ids = numpy.digitize(reference_data, reference_bins)
-        pixels_in_valid_bins = [c in passed_bins[0] + 1
-                                and r in passed_bins[1] + 1
-                                for c, r in zip(candidate_bin_ids,
-                                                reference_bin_ids)]
-
+        candidate_bin_ids = numpy.digitize(candidate_data, candidate_bins) - 1
+        reference_bin_ids = numpy.digitize(reference_data, reference_bins) - 1
+        passed_bin_pairs = zip(passed_bins[0], passed_bins[1])
+        pixels_in_valid_bins = [(c, r) in passed_bin_pairs
+                               for c, r in zip(candidate_bin_ids,
+                                               reference_bin_ids)]
         passed_pixels = numpy.nonzero(pixels_in_valid_bins)
 
     logging.info(
