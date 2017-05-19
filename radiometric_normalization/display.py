@@ -26,7 +26,7 @@ from matplotlib import pyplot as plt
 def plot_pixels(file_name, candidate_data_single_band,
                 reference_data_single_band, limits=None, fit_line=None):
 
-    logging.debug('Display: Creating pixel plot - {}'.format(file_name))
+    logging.info('Display: Creating pixel plot - {}'.format(file_name))
     fig = plt.figure()
     plt.hexbin(
         candidate_data_single_band, reference_data_single_band, mincnt=1)
@@ -54,7 +54,7 @@ def plot_histograms(file_name, candidate_data_multiple_bands,
                     # Default is for Blue-Green-Red-NIR:
                     colour_order=['b', 'g', 'r', 'y'],
                     x_limits=None, y_limits=None):
-    logging.debug('Display: Creating histogram plot - {}'.format(file_name))
+    logging.info('Display: Creating histogram plot - {}'.format(file_name))
     fig = plt.figure()
     plt.hold(True)
     for colour, c_band in zip(colour_order, candidate_data_multiple_bands):

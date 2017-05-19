@@ -32,27 +32,27 @@ def fit(candidate_data, reference_data):
     :returns: A gain and an offset (tuple of floats)
     '''
     try:
-        logging.info('Robust: Trying HuberRegressor with epsilon 1.01')
+        logging.debug('Robust: Trying HuberRegressor with epsilon 1.01')
         gain, offset = _huber_regressor(
             candidate_data, reference_data, 1.01)
     except:
         try:
-            logging.info('Robust: Trying HuberRegressor with epsilon 1.05')
+            logging.debug('Robust: Trying HuberRegressor with epsilon 1.05')
             gain, offset = _huber_regressor(
                 candidate_data, reference_data, 1.05)
         except:
             try:
-                logging.info('Robust: Trying HuberRegressor with epsilon 1.1')
+                logging.debug('Robust: Trying HuberRegressor with epsilon 1.1')
                 gain, offset = _huber_regressor(
                     candidate_data, reference_data, 1.1)
             except:
                 try:
-                    logging.info('Robust: Trying HuberRegressor with epsilon '
+                    logging.debug('Robust: Trying HuberRegressor with epsilon '
                                  '1.35')
                     gain, offset = _huber_regressor(
                         candidate_data, reference_data, 1.35)
                 except:
-                    logging.info('Robust: Trying RANSAC')
+                    logging.debug('Robust: Trying RANSAC')
                     gain, offset = _ransac_regressor(
                         candidate_data, reference_data)
     return gain, offset

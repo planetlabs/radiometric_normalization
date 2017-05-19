@@ -45,6 +45,7 @@ def apply_directly(input_band, transformation):
 
     :returns: A 2D array of of the input_band with the transformation applied
     '''
+    logging.info('Normalize: Applying linear transformation to band (float)')
     gain = transformation.gain
     offset = transformation.offset
     return input_band.astype('float') * gain + offset
@@ -62,7 +63,7 @@ def apply_using_lut(input_band, transformation):
 
     :returns: A 2D array of of the input_band with the transformation applied
     '''
-    logging.info('Normalize: Applying linear transformation to band')
+    logging.info('Normalize: Applying linear transformation to band (uint16)')
 
     def _apply_lut(band, lut):
         '''Changes band intensity values based on intensity look up table (lut)
@@ -84,7 +85,7 @@ def _linear_transformation_to_lut(linear_transformation,
         max_value = numpy.iinfo(dtype).max
 
     def gain_offset_to_lut(gain, offset):
-        logging.info(
+        logging.debug(
             'Normalize: Calculating lut values for gain '
             '{} and offset {}'.format(gain, offset))
         lut = numpy.arange(min_value, max_value + 1, dtype=numpy.float)
@@ -93,7 +94,7 @@ def _linear_transformation_to_lut(linear_transformation,
     lut = gain_offset_to_lut(linear_transformation.gain,
                              linear_transformation.offset)
 
-    logging.info('Normalize: Clipping lut from [{}, {}] to [{},{}]'.format(
+    logging.debug('Normalize: Clipping lut from [{}, {}] to [{},{}]'.format(
         min(lut), max(lut), min_value, max_value))
     numpy.clip(lut, min_value, max_value, lut)
 

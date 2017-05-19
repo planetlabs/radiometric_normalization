@@ -44,7 +44,7 @@ def calculate_residuals_from_line(candidate_band, reference_band,
     :returns: A 2-D array of floats with the residuals of each valid pixel
              (otherwise 0)
     '''
-    logging.info('PIF Filtering: Calculating residuals from line: y = '
+    logging.info('Filtering: Calculating residuals from line: y = '
                  '{} * x + {}'.format(line_gain, line_offset))
 
     valid_pixels = numpy.nonzero(combined_alpha)
@@ -77,7 +77,7 @@ def filter_by_residuals_from_line(candidate_band, reference_band,
 
     :returns: A 2-D array of boolean mask representing each valid pixel (True)
     '''
-    logging.info('PIF Filtering: Filtering from line: y = '
+    logging.info('Filtering: Filtering from line: y = '
                  '{} * x + {}'.format(line_gain, line_offset))
 
     residual_band = calculate_residuals_from_line(
@@ -86,6 +86,13 @@ def filter_by_residuals_from_line(candidate_band, reference_band,
     mask = numpy.zeros(candidate_band.shape, dtype=numpy.bool)
     mask[numpy.nonzero(residual_band < threshold)] = 1
     mask[numpy.nonzero(numpy.logical_not(combined_alpha))] = 0
+
+    logging.info(
+        'Filtering: Valid data = {} out of {} ({}%)'.format(
+            len(numpy.nonzero(mask)[0]),
+            candidate_band.size,
+            100.0 * len(numpy.nonzero(mask)[0]) / candidate_band.size))
+
     return mask
 
 
@@ -136,7 +143,7 @@ def filter_by_histogram(candidate_band, reference_band,
 
     :returns: A 2-D array of boolean mask representing each valid pixel (True)
     '''
-    logging.info('PIF Filtering: Filtering by histogram.')
+    logging.info('Filtering: Filtering by histogram.')
 
     valid_pixels = numpy.nonzero(combined_alpha)
     candidate_data = candidate_band[valid_pixels]
@@ -161,11 +168,11 @@ def filter_by_histogram(candidate_band, reference_band,
         return False
 
     if number_of_valid_bins:
-        logging.info('Filtering by number of histogram bins.')
+        logging.info('Filtering: Filtering by number of histogram bins.')
         passed_bins = numpy.unravel_index(
           numpy.argsort(H.ravel())[-number_of_valid_bins:], H.shape)
     else:
-        logging.info('Filtering by threshold.')
+        logging.info('Filtering: Filtering by threshold.')
         H_max = float(max(H.flatten()))
         passed_bins = numpy.nonzero(H / H_max > threshold)
         logging.info(
@@ -173,16 +180,16 @@ def filter_by_histogram(candidate_band, reference_band,
                 len(passed_bins[0]), len(H.flatten())))
 
     if rough_search:
-        logging.info('Rough filtering only')
+        logging.debug('Filtering: Rough filtering only')
         c_min, c_max, r_min, r_max = get_valid_range()
-        logging.info(
+        logging.debug(
             'Valid range: Candidate = ({}, {}), Reference = ({}, {})'.format(
                 c_min, c_max, r_min, r_max))
         passed_pixels = numpy.nonzero(
             [check_in_valid_range(c, r) for c, r in zip(
               candidate_data, reference_data)])
     else:
-        logging.info('Exact filtering by bins')
+        logging.debug('Filtering: Exact filtering by bins')
         candidate_bin_ids = numpy.digitize(candidate_data, candidate_bins)
         reference_bin_ids = numpy.digitize(reference_data, reference_bins)
         pixels_in_valid_bins = [c in passed_bins[0] + 1
@@ -193,10 +200,10 @@ def filter_by_histogram(candidate_band, reference_band,
         passed_pixels = numpy.nonzero(pixels_in_valid_bins)
 
     logging.info(
-        'Valid data = {} out of {} ({}%)'.format(
+        'Filtering: Valid data = {} out of {} ({}%)'.format(
             len(passed_pixels[0]),
-            len(valid_pixels[0]),
-            100.0 * len(passed_pixels[0]) / len(valid_pixels[0])))
+            candidate_band.size,
+            100.0 * len(passed_pixels[0]) / candidate_band.size))
 
     mask_pixels = (valid_pixels[0][passed_pixels[0]],
                    valid_pixels[1][passed_pixels[0]])

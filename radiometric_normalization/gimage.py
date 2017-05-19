@@ -88,7 +88,7 @@ def save_metadata(gdal_ds, metadata):
 
 
 def load(filename, nodata=None, last_band_alpha=False):
-    logging.debug("Loading {} as GImage.".format(filename))
+    logging.info('GImage: Loading {} as GImage'.format(filename))
     gdal_ds = gdal.Open(filename)
     if gdal_ds is None:
         raise Exception('Unable to open file "{}" with gdal.Open()'.format(
@@ -109,19 +109,20 @@ def read_metadata(gdal_ds):
     default_geotransform = (-1.0, 1.0, 0.0, 1.0, 0.0, -1.0)
     geotransform = gdal_ds.GetGeoTransform()
     if geotransform == default_geotransform:
-        logging.info("Raster has default geotransform, not storing.")
+        logging.debug('GImage: Raster has default geotransform, not storing')
     else:
         metadata['geotransform'] = geotransform
 
     projection = gdal_ds.GetProjection()
     if projection == '':
-        logging.info("Raster has no projection information, not storing.")
+        logging.debug(
+            'GImage: Raster has no projection information, not storing')
     else:
         metadata['projection'] = gdal_ds.GetProjection()
 
     rpc = gdal_ds.GetMetadata('RPC')
     if rpc == {}:
-        logging.info("Raster has no rpc information, not storing.")
+        logging.debug('GImage: Raster has no rpc information, not storing')
     else:
         metadata['rpc'] = rpc
     return metadata
@@ -146,20 +147,21 @@ def read_single_band(gdal_ds, band_no):
 
 
 def read_alpha_and_band_count(gdal_ds, last_band_alpha=False):
-    logging.debug('Initial band count: {}'.format(
+    logging.info('GImage: Initial band count: {}'.format(
         gdal_ds.RasterCount))
     last_band = gdal_ds.GetRasterBand(gdal_ds.RasterCount)
     if last_band.GetColorInterpretation() == gdal.GCI_AlphaBand:
-        logging.debug('Alpha band found, reducing band count')
+        logging.info('GImage: Alpha band found, reducing band count')
         alpha = last_band.ReadAsArray().astype(numpy.bool)
         band_count = gdal_ds.RasterCount - 1
     elif last_band_alpha:
-        logging.debug(
-            'Forcing last band to be an alpha band, reducing band count')
+        logging.info(
+            'GImage: Forcing last band to be an alpha band, reducing band '
+            'count')
         alpha = last_band.ReadAsArray().astype(numpy.bool)
         band_count = gdal_ds.RasterCount - 1
     else:
-        logging.debug('No alpha band found')
+        logging.info('GImage: No alpha band found')
         alpha = numpy.ones(
             (gdal_ds.RasterYSize, gdal_ds.RasterXSize),
             dtype=numpy.bool)
@@ -182,9 +184,9 @@ def check_comparable(gimages, check_metadata=False):
     band_shape = gimages[0].bands[0].shape
     metadata = gimages[0].metadata
 
-    logging.debug('Initial image - band number, band shape: {}, {}'.format(
-        no_bands, band_shape))
-    logging.debug('Initial image metadata: '.format(metadata))
+    logging.debug('GImage: Initial image - band number, band shape: '
+                  '{}, {}'.format(no_bands, band_shape))
+    logging.debug('GImage: Initial image metadata: '.format(metadata))
 
     for i, image in enumerate(gimages[1:]):
         if len(image.bands) != no_bands:

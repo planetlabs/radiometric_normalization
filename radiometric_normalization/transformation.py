@@ -45,11 +45,11 @@ def generate_linear_relationship(candidate_band, reference_band, pif_mask):
 
     c_mean = numpy.mean(candidate_pifs)
     r_mean = numpy.mean(reference_pifs)
-    logging.info('Means: candidate - {}, reference {}'.format(c_mean, r_mean))
+    logging.debug('Means: candidate - {}, reference {}'.format(c_mean, r_mean))
 
     c_std = numpy.std(candidate_pifs)
     r_std = numpy.std(reference_pifs)
-    logging.info('Stddev: candidate - {}, reference {}'.format(c_std, r_std))
+    logging.debug('Stddev: candidate - {}, reference {}'.format(c_std, r_std))
 
     def calculate_gain(c_std, r_std):
         # if c_std is zero it is a constant image so default gain to 1
@@ -85,7 +85,7 @@ def generate_ols_regression(candidate_band, reference_band, pif_mask):
 
     gain, offset, r_value, p_value, std_err = linregress(
         candidate_pifs, reference_pifs)
-    logging.info(
+    logging.debug(
         'Fit statistics: r_value = {}, p_value = {}, std_err = {}'.format(
             r_value, p_value, std_err))
     logging.info("Transformation: gain {}, offset {}".format(gain, offset))

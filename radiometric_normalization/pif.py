@@ -40,8 +40,8 @@ def generate_alpha_band_pifs(combined_alpha):
 
     :returns: A 2-D boolean array representing pseudo invariant features
     '''
-    logging.info('Pseudo invariant feature generation is using: Filtering '
-                 'using the alpha mask.')
+    logging.info('PIF: Pseudo invariant feature generation is using: '
+                 'Filtering using the alpha mask.')
 
     # Only analyse valid pixels
     valid_pixels = numpy.nonzero(combined_alpha)
@@ -55,7 +55,7 @@ def generate_alpha_band_pifs(combined_alpha):
         no_total_pixels = combined_alpha.size
         valid_percent = 100.0 * no_pif_pixels / no_total_pixels
         logging.info(
-            'PIF Info: Found {} final PIFs out of {} pixels ({}%)'.format(
+            'PIF: Found {} final PIFs out of {} pixels ({}%)'.format(
                 no_pif_pixels, no_total_pixels, valid_percent))
 
     return pif_mask
@@ -79,8 +79,8 @@ def generate_robust_pifs(candidate_band, reference_band, combined_alpha,
 
     :returns: A 2-D boolean array representing pseudo invariant features
     '''
-    logging.info('Pseudo invariant feature generation is using: Filtering '
-                 'using a robust fit.')
+    logging.info('PIF: Pseudo invariant feature generation is using: '
+                 'Filtering using a robust fit.')
 
     # Only analyse valid pixels
     valid_pixels = numpy.nonzero(combined_alpha)
@@ -94,9 +94,11 @@ def generate_robust_pifs(candidate_band, reference_band, combined_alpha,
         candidate_band, reference_band, combined_alpha,
         threshold=parameters.threshold, line_gain=gain, line_offset=offset)
 
-    if logging.getLogger().getEffectiveLevel() <= logging.INFO:
-        _info_logging(candidate_band, reference_band,
-                     valid_pixels, numpy.nonzero(pif_mask))
+    _info_logging(candidate_band.size, numpy.nonzero(pif_mask))
+
+    if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+        _debug_logging(candidate_band, reference_band,
+                       valid_pixels, numpy.nonzero(pif_mask))
 
     return pif_mask
 
@@ -118,36 +120,42 @@ def generate_pca_pifs(candidate_band, reference_band, combined_alpha,
 
     :returns: A 2-D boolean array representing pseudo invariant features
     '''
-    logging.info('Pseudo invariant feature generation is using: Filtering '
-                 'using PCA.')
+    logging.info('PIF: Pseudo invariant feature generation is using: '
+                 'Filtering using PCA.')
 
     # Find PIFs
     pif_mask = pca_filter.get_pif_mask(
         candidate_band, reference_band, combined_alpha, parameters)
 
-    if logging.getLogger().getEffectiveLevel() <= logging.INFO:
-        _info_logging(candidate_band, reference_band,
-                      numpy.nonzero(combined_alpha),
-                      numpy.nonzero(pif_mask))
+    _info_logging(candidate_band.size, numpy.nonzero(pif_mask))
+
+    if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
+        _debug_logging(candidate_band, reference_band,
+                       numpy.nonzero(combined_alpha),
+                       numpy.nonzero(pif_mask))
 
     return pif_mask
 
 
-def _info_logging(c_band, r_band, valid_pixels, pif_pixels):
+def _info_logging(no_total_pixels, pif_pixels):
     ''' Optional logging information
     '''
-    logging.info('PIF Info: Original corrcoef = {}'.format(
+    if pif_pixels[0] != [] and pif_pixels[1] != []:
+        no_pif_pixels = len(pif_pixels[0])
+        valid_percent = 100.0 * no_pif_pixels / no_total_pixels
+        logging.info(
+            'PIF: Found {} final PIFs out of {} pixels ({}%)'.format(
+                no_pif_pixels, no_total_pixels, valid_percent))
+    else:
+        logging.info('PIF: No PIF pixels found.')
+
+
+def _debug_logging(c_band, r_band, valid_pixels, pif_pixels):
+    ''' Optional logging information
+    '''
+    logging.debug('PIF: Original corrcoef = {}'.format(
         numpy.corrcoef(c_band[valid_pixels], r_band[valid_pixels])[0, 1]))
 
     if pif_pixels[0] != [] and pif_pixels[1] != []:
-        logging.info('PIF Info: Filtered corrcoef = {}'.format(
+        logging.debug('PIF: Filtered corrcoef = {}'.format(
             numpy.corrcoef(c_band[pif_pixels], r_band[pif_pixels])[0, 1]))
-
-        no_pif_pixels = len(pif_pixels[0])
-        no_total_pixels = c_band.size
-        valid_percent = 100.0 * no_pif_pixels / no_total_pixels
-        logging.info(
-            'PIF Info: Found {} final PIFs out of {} pixels ({}%)'.format(
-                no_pif_pixels, no_total_pixels, valid_percent))
-    else:
-        logging.info('PIF Info: No PIF pixels found.')

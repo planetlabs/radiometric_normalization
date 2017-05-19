@@ -61,7 +61,7 @@ def generate(candidate_path, reference_path,
 
         pif_mask = numpy.ones(c_alpha.shape, dtype=numpy.bool)
         for band_no in range(1, c_band_count + 1):
-            logging.info('PCA Info: Band {}'.format(band_no))
+            logging.info('PIF PCA: Band {}'.format(band_no))
             c_band = gimage.read_single_band(c_ds, band_no)
             r_band = gimage.read_single_band(r_ds, band_no)
             pif_band_mask = pif.generate_pca_pifs(
@@ -72,7 +72,7 @@ def generate(candidate_path, reference_path,
         no_valid_pixels = len(numpy.nonzero(pif_mask)[0])
         valid_percent = 100.0 * no_valid_pixels / no_total_pixels
         logging.info(
-            'PCA Info: Found {} final pifs out of {} pixels ({}%) for all '
+            'PIF PCA: Found {} final pifs out of {} pixels ({}%) for all '
             'bands'.format(no_valid_pixels, no_total_pixels, valid_percent))
     else:
         raise NotImplementedError("Only 'filter_alpha' and 'filter_PCA' "
