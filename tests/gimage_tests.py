@@ -77,7 +77,7 @@ class Tests(unittest.TestCase):
         test_band = numpy.array([[0, 1, 2], [2, 3, 4]], dtype=numpy.uint16)
         test_gimage = gimage.GImage([test_band], self.mask, self.metadata)
         test_compress = False
-        test_ds = gimage._create_ds(test_gimage, output_file,
+        test_ds = gimage.create_ds(output_file, 3, 2, 2,
                                     compress=test_compress)
 
         self.assertEqual(test_ds.RasterCount, 2)
