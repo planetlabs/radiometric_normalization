@@ -78,7 +78,7 @@ def filter_by_residuals_from_line(candidate_band, reference_band,
     :returns: A 2-D array of boolean mask representing each valid pixel (True)
     '''
     logging.info('Filtering: Filtering from line: y = '
-                 '{} * x + {}'.format(line_gain, line_offset))
+                 '{} * x + {} @ {}'.format(line_gain, line_offset, threshold))
 
     residual_band = calculate_residuals_from_line(
         candidate_band, reference_band, combined_alpha, line_gain, line_offset)
@@ -168,11 +168,12 @@ def filter_by_histogram(candidate_band, reference_band,
         return False
 
     if number_of_valid_bins:
-        logging.info('Filtering: Filtering by number of histogram bins.')
+        logging.info('Filtering: Filtering by number of histogram bins: '
+                     '{}'.format(number_of_valid_bins))
         passed_bins = numpy.unravel_index(
           numpy.argsort(H.ravel())[-number_of_valid_bins:], H.shape)
     else:
-        logging.info('Filtering: Filtering by threshold.')
+        logging.info('Filtering: Filtering by threshold: {}'.format(threshold))
         H_max = float(max(H.flatten()))
         passed_bins = numpy.nonzero(H / H_max > threshold)
         logging.info(
