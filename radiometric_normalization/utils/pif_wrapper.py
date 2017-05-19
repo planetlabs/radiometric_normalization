@@ -61,7 +61,7 @@ def generate(candidate_path, reference_path,
 
         pif_mask = numpy.ones(c_alpha.shape, dtype=numpy.bool)
         for band_no in range(1, c_band_count + 1):
-            logging.info('PIF PCA: Band {}'.format(band_no))
+            logging.info('PIF: Band {}'.format(band_no))
             c_band = gimage.read_single_band(c_ds, band_no)
             r_band = gimage.read_single_band(r_ds, band_no)
             pif_band_mask = pif.generate_pca_pifs(
@@ -72,11 +72,40 @@ def generate(candidate_path, reference_path,
         no_valid_pixels = len(numpy.nonzero(pif_mask)[0])
         valid_percent = 100.0 * no_valid_pixels / no_total_pixels
         logging.info(
-            'PIF PCA: Found {} final pifs out of {} pixels ({}%) for all '
+            'PIF: Found {} final pifs out of {} pixels ({}%) for all '
+            'bands'.format(no_valid_pixels, no_total_pixels, valid_percent))
+    elif method == 'filter_robust':
+        c_ds, c_alpha, c_band_count = _open_image_and_get_info(
+            candidate_path, last_band_alpha)
+        r_ds, r_alpha, r_band_count = _open_image_and_get_info(
+            reference_path, last_band_alpha)
+
+        _assert_consistent(c_alpha, r_alpha, c_band_count, r_band_count)
+        combined_alpha = numpy.logical_and(c_alpha, r_alpha)
+
+        if method_options:
+            parameters = method_options
+        else:
+            parameters = pif.DEFAULT_ROBUST_OPTIONS
+
+        pif_mask = numpy.ones(c_alpha.shape, dtype=numpy.bool)
+        for band_no in range(1, c_band_count + 1):
+            logging.info('PIF: Band {}'.format(band_no))
+            c_band = gimage.read_single_band(c_ds, band_no)
+            r_band = gimage.read_single_band(r_ds, band_no)
+            pif_band_mask = pif.generate_robust_pifs(
+                c_band, r_band, combined_alpha, parameters)
+            pif_mask = numpy.logical_and(pif_mask, pif_band_mask)
+
+        no_total_pixels = c_alpha.size
+        no_valid_pixels = len(numpy.nonzero(pif_mask)[0])
+        valid_percent = 100.0 * no_valid_pixels / no_total_pixels
+        logging.info(
+            'PIF: Found {} final pifs out of {} pixels ({}%) for all '
             'bands'.format(no_valid_pixels, no_total_pixels, valid_percent))
     else:
-        raise NotImplementedError("Only 'filter_alpha' and 'filter_PCA' "
-                                  "methods are implemented.")
+        raise NotImplementedError('Only "filter_alpha", "filter_PCA" and '
+                                  '"filter_robust" methods are implemented.')
 
     return pif_mask
 
