@@ -145,21 +145,11 @@ def filter_by_histogram(candidate_band, reference_band,
     H, candidate_bins, reference_bins = numpy.histogram2d(
         candidate_data, reference_data, bins=number_of_total_bins_in_one_axis)
 
-    def check_in_valid_bin(c_data_point, r_data_point):
-        for valid_cand_bin, valid_ref_bin in zip(
-          passed_bins[0], passed_bins[1]):
-            if c_data_point >= candidate_bins[valid_cand_bin] and \
-               c_data_point <= candidate_bins[valid_cand_bin + 1] and \
-               r_data_point >= reference_bins[valid_ref_bin] and \
-               r_data_point <= reference_bins[valid_ref_bin + 1]:
-                return True
-        return False
-
     def get_valid_range():
         c_min = min([candidate_bins[v] for v in passed_bins[0]])
-        c_max = min([candidate_bins[v + 1] for v in passed_bins[0]])
+        c_max = max([candidate_bins[v + 1] for v in passed_bins[0]])
         r_min = min([reference_bins[v] for v in passed_bins[1]])
-        r_max = min([reference_bins[v + 1] for v in passed_bins[1]])
+        r_max = max([reference_bins[v + 1] for v in passed_bins[1]])
         return c_min, c_max, r_min, r_max
 
     def check_in_valid_range(c_data_point, r_data_point):
@@ -193,9 +183,15 @@ def filter_by_histogram(candidate_band, reference_band,
               candidate_data, reference_data)])
     else:
         logging.info('Exact filtering by bins')
-        passed_pixels = numpy.nonzero(
-            [check_in_valid_bin(c, r) for c, r in zip(
-                candidate_data, reference_data)])
+        candidate_bin_ids = numpy.digitize(candidate_data, candidate_bins)
+        reference_bin_ids = numpy.digitize(reference_data, reference_bins)
+        pixels_in_valid_bins = [c in passed_bins[0] + 1
+                                and r in passed_bins[1] + 1
+                                for c, r in zip(candidate_bin_ids,
+                                                reference_bin_ids)]
+
+        passed_pixels = numpy.nonzero(pixels_in_valid_bins)
+
     logging.info(
         'Valid data = {} out of {} ({}%)'.format(
             len(passed_pixels[0]),
