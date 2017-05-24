@@ -29,30 +29,30 @@ robust_options = namedtuple('robust_options', 'threshold')
 DEFAULT_ROBUST_OPTIONS = robust_options(threshold=1000)
 
 
-def generate_alpha_band_pifs(combined_alpha):
+def generate_mask_pifs(combined_mask):
     ''' Creates the pseudo-invariant features from the reference and candidate
-    alpha masks (filtering out pixels where either the candidate or reference
-    is masked, i.e. the alpha value is False).
+    valid data masks (filtering out pixels where either the candidate or
+    reference is masked, i.e. the mask value is False).
 
-    :param array combined_alpha: A 2D array representing the alpha mask of the
-                                 valid pixels in both the candidate array and
-                                 reference array
+    :param array combined_mask: A 2D array representing a mask of the valid
+                                pixels in both the candidate array and
+                                reference array
 
     :returns: A 2-D boolean array representing pseudo invariant features
     '''
     logging.info('PIF: Pseudo invariant feature generation is using: '
-                 'Filtering using the alpha mask.')
+                 'Filtering using the valid data mask.')
 
     # Only analyse valid pixels
-    valid_pixels = numpy.nonzero(combined_alpha)
+    valid_pixels = numpy.nonzero(combined_mask)
 
-    pif_mask = numpy.zeros(combined_alpha.shape, dtype=numpy.bool)
+    pif_mask = numpy.zeros(combined_mask.shape, dtype=numpy.bool)
     pif_mask[valid_pixels] = True
 
     if logging.getLogger().getEffectiveLevel() <= logging.INFO:
         pif_pixels = numpy.nonzero(pif_mask)
         no_pif_pixels = len(pif_pixels[0])
-        no_total_pixels = combined_alpha.size
+        no_total_pixels = combined_mask.size
         valid_percent = 100.0 * no_pif_pixels / no_total_pixels
         logging.info(
             'PIF: Found {} final PIFs out of {} pixels ({}%)'.format(
@@ -61,7 +61,7 @@ def generate_alpha_band_pifs(combined_alpha):
     return pif_mask
 
 
-def generate_robust_pifs(candidate_band, reference_band, combined_alpha,
+def generate_robust_pifs(candidate_band, reference_band, combined_mask,
                          parameters=DEFAULT_ROBUST_OPTIONS):
     ''' Performs a robust fit to the valid pixels and filters according
     to the distance from the fit line.
@@ -70,9 +70,9 @@ def generate_robust_pifs(candidate_band, reference_band, combined_alpha,
                                  candidate band
     :param array reference_band: A 2D array representing the image data of the
                                  reference image
-    :param array combined_alpha: A 2D array representing the alpha mask of the
-                                 valid pixels in both the candidate array and
-                                 reference array
+    :param array combined_mask: A 2D array representing a mask of the valid
+                                pixels in both the candidate array and
+                                reference array
     :param robust_options parameters: Method specific parameters. Currently:
         threshold (float): Representing the distance from the fit line
                            to look for PIF pixels
@@ -83,7 +83,7 @@ def generate_robust_pifs(candidate_band, reference_band, combined_alpha,
                  'Filtering using a robust fit.')
 
     # Only analyse valid pixels
-    valid_pixels = numpy.nonzero(combined_alpha)
+    valid_pixels = numpy.nonzero(combined_mask)
 
     # Robust fit
     gain, offset = robust.fit(
@@ -91,7 +91,7 @@ def generate_robust_pifs(candidate_band, reference_band, combined_alpha,
 
     # Filter using the robust fit
     pif_mask = filtering.filter_by_residuals_from_line(
-        candidate_band, reference_band, combined_alpha,
+        candidate_band, reference_band, combined_mask,
         threshold=parameters.threshold, line_gain=gain, line_offset=offset)
 
     _info_logging(candidate_band.size, numpy.nonzero(pif_mask))
@@ -103,7 +103,7 @@ def generate_robust_pifs(candidate_band, reference_band, combined_alpha,
     return pif_mask
 
 
-def generate_pca_pifs(candidate_band, reference_band, combined_alpha,
+def generate_pca_pifs(candidate_band, reference_band, combined_mask,
                       parameters=DEFAULT_PCA_OPTIONS):
     ''' Performs PCA analysis on the valid pixels and filters according
     to the distance from the principle eigenvector.
@@ -112,9 +112,9 @@ def generate_pca_pifs(candidate_band, reference_band, combined_alpha,
                                  candidate band
     :param array reference_band: A 2D array representing the image data of the
                                  reference image
-    :param array combined_alpha: A 2D array representing the alpha mask of the
-                                 valid pixels in both the candidate array and
-                                 reference array
+    :param array combined_mask: A 2D array representing a mask of the valid
+                                pixels in both the candidate array and
+                                reference array
     :param pca_options parameters: Method specific parameters. Currently:
         threshold (float): Representing the width of the PCA filter
 
@@ -125,13 +125,13 @@ def generate_pca_pifs(candidate_band, reference_band, combined_alpha,
 
     # Find PIFs
     pif_mask = pca_filter.get_pif_mask(
-        candidate_band, reference_band, combined_alpha, parameters)
+        candidate_band, reference_band, combined_mask, parameters)
 
     _info_logging(candidate_band.size, numpy.nonzero(pif_mask))
 
     if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
         _debug_logging(candidate_band, reference_band,
-                       numpy.nonzero(combined_alpha),
+                       numpy.nonzero(combined_mask),
                        numpy.nonzero(pif_mask))
 
     return pif_mask
