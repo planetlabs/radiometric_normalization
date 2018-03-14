@@ -41,7 +41,7 @@ The code in this repo is kept in two directories: 'radiometric_normalization' an
 * 'normalize.py' is the module that can apply transformations calculated in 'transformation.py' to an image.
 * 'validate.py' is the module for validating radiometric normalization.
 
-Each of the modules referenced above are intended to run on a single band at a time (represented as a numpy array). Examples of more complete functions that can handle image reading and multiple bands are within 'radiometric_normalization/utils'. These will be explained below.
+Each of the modules referenced above are intended to run on a single band at a time (represented as a numpy array). Examples of more complete functions that can handle image reading and multiple bands are within 'radiometric_normalization/wrappers'. These will be explained below.
 
 'tests' contain unit tests for the functions in the library.
 
@@ -56,9 +56,9 @@ Below is an example using two Landsat8 tiles: `LC08_L1TP_044034_20170427_2017042
 
 ```python
 
-from radiometric_normalization.utils import pif_wrapper
-from radiometric_normalization.utils import transformation_wrapper
-from radiometric_normalization.utils import normalize_wrapper
+from radiometric_normalization.wrappers import pif_wrapper
+from radiometric_normalization.wrappers import transformation_wrapper
+from radiometric_normalization.wrappers import normalize_wrapper
 from radiometric_normalization import gimage
 from radiometric_normalization import pif
 
@@ -67,7 +67,7 @@ import logging
 import numpy
 import subprocess
 from osgeo import gdal
-from radiometric_normalization.utils import display_wrapper
+from radiometric_normalization.wrappers import display_wrapper
 
 logging.basicConfig(level=logging.DEBUG)
 ##
@@ -134,7 +134,7 @@ result_path = 'normalized.tif'
 gimage.save(normalised_gimg, result_path)
 
 ## OPTIONAL - View the effect on the pixels (SLOW)
-from radiometric_normalization.utils import display_wrapper
+from radiometric_normalization.wrappers import display_wrapper
 display_wrapper.create_pixel_plots(candidate_path, reference_path, 'Original', limits=[0, 30000], last_band_alpha=True)
 display_wrapper.create_pixel_plots(result_path, reference_path, 'Transformed', limits=[0, 30000], last_band_alpha=True)
 display_wrapper.create_all_bands_histograms(candidate_path, reference_path, 'Original', x_limits=[4000, 25000], last_band_alpha=True)
