@@ -48,7 +48,7 @@ Each of the modules referenced above are intended to run on a single band at a t
 
 ## Example Usage
 
-The example below demonstrates the generation of per-band linear transformations that will normalize a candidate image to the mean values of a set of reference images. The candidate and reference images must be 16-bit. Additionally, all of the reference images in the set must have the same number and order bands and pixel dimensions as the candidate image.
+The example below demonstrates the generation of per-band linear transformations that will normalize a candidate image to a reference image. The candidate and reference images must be 16-bit. Additionally, both the candidate and the reference images must have the same number and order of bands and the pixel dimensions should be identical.
 
 `candidate_path` is a string specifying the location of the candidate image on disk. `reference_paths` is a list of strings, each specifying the location of a reference image on disk. `transformations` is a list of tuples, each specifying the gain (first entry) and offset (second entry) that will normalize the respective band of the candidate image.
 
@@ -113,7 +113,7 @@ temporary_gimg = gimage.GImage([band_gimgs[b].bands[0] for b in ['blue', 'green'
 gimage.save(temporary_gimg, reference_path)
 ##
 
-parameters = pif.pca_options(limit=100)
+parameters = pif.pca_options(threshold=100)
 pif_mask = pif_wrapper.generate(candidate_path, reference_path, method='filter_PCA', last_band_alpha=True, method_options=parameters)
 
 ## OPTIONAL - Save out the PIF mask
