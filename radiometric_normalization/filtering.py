@@ -16,46 +16,7 @@ limitations under the License.
 import logging
 import numpy
 
-
-def _get_residual(data_1, data_2, line_gain, line_offset):
-    return numpy.absolute(line_gain * data_1 - data_2 + line_offset) / \
-        numpy.sqrt(1 + line_gain * line_gain)
-
-
-def combine_alphas(list_of_alphas):
-    return numpy.logical_and.reduce(list_of_alphas)
-
-
-def calculate_residuals_from_line(candidate_band, reference_band,
-                                  combined_alpha, line_gain=1.0,
-                                  line_offset=0.0):
-    ''' Calculates the residuals from a line.
-
-    :param array candidate_band: A 2D array representing the image data of the
-                                 candidate band
-    :param array reference_band: A 2D array representing the image data of the
-                                 reference image
-    :param array combined_alpha: A 2D array representing the alpha mask of the
-                                 valid pixels in both the candidate array and
-                                 reference array
-    :param float line_gain: The gradient of the line
-    :param float line_offset: The intercept of the line
-
-    :returns: A 2-D array of floats with the residuals of each valid pixel
-             (otherwise 0)
-    '''
-    logging.info('Filtering: Calculating residuals from line: y = '
-                 '{} * x + {}'.format(line_gain, line_offset))
-
-    valid_pixels = numpy.nonzero(combined_alpha)
-
-    residuals = _get_residual(
-        candidate_band[valid_pixels], reference_band[valid_pixels],
-        line_gain, line_offset)
-
-    output = numpy.zeros(candidate_band.shape)
-    output[valid_pixels] = residuals
-    return output
+from radiometric_normalization.utils import pixel_list_to_array
 
 
 def filter_by_residuals_from_line(candidate_band, reference_band,
@@ -75,25 +36,50 @@ def filter_by_residuals_from_line(candidate_band, reference_band,
     :param float line_gain: The gradient of the line
     :param float line_offset: The intercept of the line
 
-    :returns: A 2-D array of boolean mask representing each valid pixel (True)
+    :returns: A 2D array of boolean mask representing each valid pixel (True)
+    '''
+    valid_pixels = numpy.nonzero(combined_alpha)
+
+    filtered_pixels = filter_by_residuals_from_line_pixel_list(
+        candidate_band[valid_pixels], reference_band[valid_pixels], threshold,
+        line_gain, line_offset)
+
+    mask = pixel_list_to_array(
+        valid_pixels, filtered_pixels, candidate_band.shape)
+
+    no_passed_pixels = len(numpy.nonzero(mask)[0])
+    logging.info(
+        'Filtering: Valid data = {} out of {} ({}%)'.format(
+            no_passed_pixels,
+            candidate_band.size,
+            100.0 * no_passed_pixels / candidate_band.size))
+
+    return mask
+
+
+def filter_by_residuals_from_line_pixel_list(candidate_data, reference_data,
+                                             threshold=1000, line_gain=1.0,
+                                             line_offset=0.0):
+    ''' Calculates the residuals from a line and filters by residuals.
+
+    :param list candidate_band: A list of valid candidate data
+    :param list reference_band: A list of coincident valid reference data
+    :param float line_gain: The gradient of the line
+    :param float line_offset: The intercept of the line
+
+    :returns: A list of booleans the same length as candidate representing if
+        the data point is still active after filtering or not
     '''
     logging.info('Filtering: Filtering from line: y = '
                  '{} * x + {} @ {}'.format(line_gain, line_offset, threshold))
 
-    residual_band = calculate_residuals_from_line(
-        candidate_band, reference_band, combined_alpha, line_gain, line_offset)
+    def _get_residual(data_1, data_2):
+        return numpy.absolute(line_gain * data_1 - data_2 + line_offset) / \
+            numpy.sqrt(1 + line_gain * line_gain)
 
-    mask = numpy.zeros(candidate_band.shape, dtype=numpy.bool)
-    mask[numpy.nonzero(residual_band < threshold)] = 1
-    mask[numpy.nonzero(numpy.logical_not(combined_alpha))] = 0
+    residuals = _get_residual(candidate_data, reference_data)
 
-    logging.info(
-        'Filtering: Valid data = {} out of {} ({}%)'.format(
-            len(numpy.nonzero(mask)[0]),
-            candidate_band.size,
-            100.0 * len(numpy.nonzero(mask)[0]) / candidate_band.size))
-
-    return mask
+    return residuals < threshold
 
 
 def filter_by_histogram(candidate_band, reference_band,
@@ -101,6 +87,9 @@ def filter_by_histogram(candidate_band, reference_band,
                         number_of_valid_bins=None, rough_search=False,
                         number_of_total_bins_in_one_axis=10):
     ''' Filters pixels using a 2D histogram of common values.
+
+    This function is more memory intensive but keeps the 2D structure of the
+    pixels
 
     There is one mutually exclusive option:
     - either a number_of_valid_bins is specified, which represents how many of
@@ -141,13 +130,75 @@ def filter_by_histogram(candidate_band, reference_band,
                                                  value of 10 will mean that
                                                  there are 100 bins in total)
 
-    :returns: A 2-D array of boolean mask representing each valid pixel (True)
+    :returns: A 2D array of boolean mask representing each valid pixel (True)
     '''
-    logging.info('Filtering: Filtering by histogram.')
-
     valid_pixels = numpy.nonzero(combined_alpha)
     candidate_data = candidate_band[valid_pixels]
     reference_data = reference_band[valid_pixels]
+
+    filtered_pixels = filter_by_histogram_pixel_list(
+        candidate_data, reference_data, threshold, number_of_valid_bins,
+        rough_search, number_of_total_bins_in_one_axis)
+
+    mask = pixel_list_to_array(
+        valid_pixels, filtered_pixels, candidate_band.shape)
+
+    no_passed_pixels = len(numpy.nonzero(mask)[0])
+    logging.info(
+        'Filtering: Valid data = {} out of {} ({}%)'.format(
+            no_passed_pixels,
+            candidate_band.size,
+            100.0 * no_passed_pixels / candidate_band.size))
+
+    return mask
+
+
+def filter_by_histogram_pixel_list(candidate_data, reference_data,
+                                   threshold=0.1, number_of_valid_bins=None,
+                                   rough_search=False,
+                                   number_of_total_bins_in_one_axis=10):
+    ''' Filters pixels using a 2D histogram of common values.
+
+    This function is for lists of coincident candidate and reference pixel data
+
+    There is one mutually exclusive option:
+    - either a number_of_valid_bins is specified, which represents how many of
+      the most popular bins to select
+    - or a threshold is specified, which specifies a minimum population above
+      which a bin is selected
+
+    :param list candidate_band: A list of valid candidate data
+    :param list reference_band: A list of coincident valid reference data
+    :param float threshold: A threshold on the population of a bin. Above this
+                            number, a bin is selected. This number is a
+                            fraction of the maximum bin (i.e. a value of 0.1
+                            will mean that the bin will need to have more than
+                            10% than the most populous bin)
+    :param int number_of_valid_bins: The total number of bins to select. The
+                                     bins are arranged in descending order of
+                                     population. This number specifies how
+                                     many of the top bins are selected (i.e.
+                                     a value of 3 will mean that the top three
+                                     bins are selected). If this is specified
+                                     then the threshold parameter is ignored
+    :param boolean rough_search: If this is true, the bins will specify a
+                                 maximum and minimum range within which to
+                                 select pixels (i.e. one superset bin will be
+                                 created from the bins that are selected).
+                                 This should speed up the computation but be
+                                 less exact
+    :param int number_of_total_bins_in_one_axis: This number controls the total
+                                                 number of bins. This number
+                                                 represents the total number of
+                                                 bins in one axis. Both axes
+                                                 have the same number (i.e. a
+                                                 value of 10 will mean that
+                                                 there are 100 bins in total)
+
+    :returns: A list of booleans the same length as candidate representing if
+        the data point is still active after filtering or not
+    '''
+    logging.info('Filtering: Filtering by histogram.')
 
     H, candidate_bins, reference_bins = numpy.histogram2d(
         candidate_data, reference_data, bins=number_of_total_bins_in_one_axis)
@@ -186,27 +237,12 @@ def filter_by_histogram(candidate_band, reference_band,
         logging.debug(
             'Valid range: Candidate = ({}, {}), Reference = ({}, {})'.format(
                 c_min, c_max, r_min, r_max))
-        passed_pixels = numpy.nonzero(
-            [check_in_valid_range(c, r) for c, r in zip(
-              candidate_data, reference_data)])
+        return [check_in_valid_range(c, r) for c, r in
+                zip(candidate_data, reference_data)]
     else:
         logging.debug('Filtering: Exact filtering by bins')
         candidate_bin_ids = numpy.digitize(candidate_data, candidate_bins) - 1
         reference_bin_ids = numpy.digitize(reference_data, reference_bins) - 1
         passed_bin_pairs = zip(passed_bins[0], passed_bins[1])
-        pixels_in_valid_bins = [(c, r) in passed_bin_pairs
-                               for c, r in zip(candidate_bin_ids,
-                                               reference_bin_ids)]
-        passed_pixels = numpy.nonzero(pixels_in_valid_bins)
-
-    logging.info(
-        'Filtering: Valid data = {} out of {} ({}%)'.format(
-            len(passed_pixels[0]),
-            candidate_band.size,
-            100.0 * len(passed_pixels[0]) / candidate_band.size))
-
-    mask_pixels = (valid_pixels[0][passed_pixels[0]],
-                   valid_pixels[1][passed_pixels[0]])
-    mask = numpy.zeros(candidate_band.shape, dtype=numpy.bool)
-    mask[mask_pixels] = 1
-    return mask
+        return [(c, r) in passed_bin_pairs for c, r in
+                zip(candidate_bin_ids, reference_bin_ids)]
