@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 import logging
-from collections import namedtuple
-
 import numpy
+
+from collections import namedtuple
 from osgeo import gdal, gdal_array
+
 '''
 A wrapper for a geospatial image
 
