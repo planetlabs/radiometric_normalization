@@ -21,12 +21,14 @@ from radiometric_normalization import pca_filter
 from radiometric_normalization import robust
 from radiometric_normalization import filtering
 
+from radiometric_normalization.utils import pixel_list_to_array
+
 
 pca_options = namedtuple('pca_options', 'threshold')
 DEFAULT_PCA_OPTIONS = pca_options(threshold=30)
 
 robust_options = namedtuple('robust_options', 'threshold')
-DEFAULT_ROBUST_OPTIONS = robust_options(threshold=1000)
+DEFAULT_ROBUST_OPTIONS = robust_options(threshold=100)
 
 
 def generate_mask_pifs(combined_mask):
@@ -38,7 +40,7 @@ def generate_mask_pifs(combined_mask):
                                 pixels in both the candidate array and
                                 reference array
 
-    :returns: A 2-D boolean array representing pseudo invariant features
+    :returns: A 2D boolean array representing pseudo invariant features
     '''
     logging.info('PIF: Pseudo invariant feature generation is using: '
                  'Filtering using the valid data mask.')
@@ -77,22 +79,15 @@ def generate_robust_pifs(candidate_band, reference_band, combined_mask,
         threshold (float): Representing the distance from the fit line
                            to look for PIF pixels
 
-    :returns: A 2-D boolean array representing pseudo invariant features
+    :returns: A 2D boolean array representing pseudo invariant features
     '''
-    logging.info('PIF: Pseudo invariant feature generation is using: '
-                 'Filtering using a robust fit.')
-
-    # Only analyse valid pixels
     valid_pixels = numpy.nonzero(combined_mask)
 
-    # Robust fit
-    gain, offset = robust.fit(
-        candidate_band[valid_pixels], reference_band[valid_pixels])
+    pif_pixels = generate_robust_pifs_from_pixel_list(
+        candidate_band[valid_pixels], reference_band[valid_pixels], parameters)
 
-    # Filter using the robust fit
-    pif_mask = filtering.filter_by_residuals_from_line(
-        candidate_band, reference_band, combined_mask,
-        threshold=parameters.threshold, line_gain=gain, line_offset=offset)
+    pif_mask = pixel_list_to_array(
+        valid_pixels, pif_pixels, candidate_band.shape)
 
     _info_logging(candidate_band.size, numpy.nonzero(pif_mask))
 
@@ -101,6 +96,31 @@ def generate_robust_pifs(candidate_band, reference_band, combined_mask,
                        valid_pixels, numpy.nonzero(pif_mask))
 
     return pif_mask
+
+
+def generate_robust_pifs_from_pixel_list(candidate_data, reference_data,
+                                         parameters=DEFAULT_ROBUST_OPTIONS):
+    ''' Performs a robust fit to the valid pixels and filters according
+    to the distance from the fit line.
+
+    :param list candidate_band: A list of valid candidate data
+    :param list reference_band: A list of coincident valid reference data
+    :param robust_options parameters: Method specific parameters. Currently:
+        threshold (float): Representing the distance from the fit line
+                           to look for PIF pixels
+
+    :returns: A boolean list representing the pif pixels within valid_pixels
+    '''
+    logging.info('PIF: Pseudo invariant feature generation is using: '
+                 'Filtering using a robust fit.')
+
+    # Robust fit
+    gain, offset = robust.fit(candidate_data, reference_data)
+
+    # Filter using the robust fit
+    return filtering.filter_by_residuals_from_line_pixel_list(
+        candidate_data, reference_data,
+        threshold=parameters.threshold, line_gain=gain, line_offset=offset)
 
 
 def generate_pca_pifs(candidate_band, reference_band, combined_mask,
@@ -118,23 +138,42 @@ def generate_pca_pifs(candidate_band, reference_band, combined_mask,
     :param pca_options parameters: Method specific parameters. Currently:
         threshold (float): Representing the width of the PCA filter
 
-    :returns: A 2-D boolean array representing pseudo invariant features
+    :returns: A 2D boolean array representing pseudo invariant features
     '''
-    logging.info('PIF: Pseudo invariant feature generation is using: '
-                 'Filtering using PCA.')
+    valid_pixels = numpy.nonzero(combined_mask)
 
-    # Find PIFs
-    pif_mask = pca_filter.get_pif_mask(
-        candidate_band, reference_band, combined_mask, parameters)
+    pif_pixels = generate_pca_pifs_pixel_list(
+        candidate_band[valid_pixels], reference_band[valid_pixels], parameters)
+
+    pif_mask = pixel_list_to_array(
+        valid_pixels, pif_pixels, candidate_band.shape)
 
     _info_logging(candidate_band.size, numpy.nonzero(pif_mask))
 
     if logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
         _debug_logging(candidate_band, reference_band,
-                       numpy.nonzero(combined_mask),
-                       numpy.nonzero(pif_mask))
+                       valid_pixels, numpy.nonzero(pif_mask))
 
     return pif_mask
+
+
+def generate_pca_pifs_pixel_list(candidate_data, reference_data,
+                                 parameters=DEFAULT_PCA_OPTIONS):
+    ''' Performs PCA analysis on the valid pixels and filters according
+    to the distance from the principle eigenvector.
+
+    :param list candidate_band: A list of valid candidate data
+    :param list reference_band: A list of coincident valid reference data
+    :param pca_options parameters: Method specific parameters. Currently:
+        threshold (float): Representing the width of the PCA filter
+
+    :returns: A boolean list representing the pif pixels within valid_pixels
+    '''
+    logging.info('PIF: Pseudo invariant feature generation is using: '
+                 'Filtering using PCA.')
+
+    return pca_filter.pca_fit_and_filter_pixel_list(
+        candidate_data, reference_data, parameters)
 
 
 def _info_logging(no_total_pixels, pif_pixels):

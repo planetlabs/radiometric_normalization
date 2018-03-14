@@ -19,44 +19,20 @@ import numpy
 from sklearn.decomposition import PCA
 
 
-def get_pif_mask(candidate_band, reference_band, combined_alpha, parameters):
-    '''Uses performs PCA analysis on only the valid pixels, filters according
-    to the distance from the principle eigenvector and then recreates a
-    boolean mask array according to the result of the filtering.
+def pca_fit_and_filter_pixel_list(candidate_data, reference_data, parameters):
+    ''' Performs PCA analysis, on the valid pixels and filters according
+    to the distance from the principle eigenvector, for a single band.
 
-    :param array candidate_band: A 2D array representing the image data of the
-                                 candidate band
-    :param array reference_band: A 2D array representing the image data of the
-                                 reference image
-    :param array combined_alpha: A 2D array representing the alpha mask of the
-                                 valid pixels in both the candidate array and
-                                 reference array
+    :param list candidate_band: A list of valid candidate data
+    :param list reference_band: A list of coincident valid reference data
     :param pca_options parameters: Method specific parameters. Currently:
         threshold (float): Representing the width of the PCA filter
 
-    :returns: A 2-D boolean array representing pseudo invariant features
+    :returns: A boolean list representing the pif pixels within valid_pixels
     '''
-    # Only analyse valid pixels
-    valid_pixels = numpy.nonzero(combined_alpha)
-
-    # Find PIFs
-    passed_pixels = _pca_fit_and_filter_valid_pixels(
-        candidate_band[valid_pixels], reference_band[valid_pixels],
-        parameters)
-
-    return _create_pif_mask(passed_pixels, combined_alpha)
-
-
-def _pca_fit_and_filter_valid_pixels(candidate_pixels, reference_pixels,
-                                     parameters):
-    ''' Performs PCA analysis, on the valid pixels and filters according
-    to the distance from the principle eigenvector, for a single band.
-    '''
-    fitted_pca = _pca_fit_single_band(candidate_pixels, reference_pixels)
-    passed_pixels = _pca_filter_single_band(
-        fitted_pca, candidate_pixels, reference_pixels, parameters.threshold)
-
-    return passed_pixels
+    fitted_pca = _pca_fit_single_band(candidate_data, reference_data)
+    return _pca_filter_single_band(
+        fitted_pca, candidate_data, reference_data, parameters.threshold)
 
 
 def _pca_fit_single_band(cand_valid, ref_valid):
@@ -74,7 +50,7 @@ def _pca_fit_single_band(cand_valid, ref_valid):
 
 
 def _numpy_array_from_2arrays(array1, array2, dtype=numpy.uint16):
-    '''Efficiently combine two 1-D arrays into a single 2-D array.
+    ''' Efficiently combine two 1-D arrays into a single 2-D array.
 
     Avoids large memory usage by creating the array using
     ``numpy.fromiter`` and then reshaping a view of the resulting
@@ -97,7 +73,7 @@ def _numpy_array_from_2arrays(array1, array2, dtype=numpy.uint16):
     :param data-type dtype: Data type for array elements
         (must be same for both arrays)
 
-    :returns: A 2-D numpy array combining the two input arrays
+    :returns: A 2D numpy array combining the two input arrays
     '''
     array_dtype = [('x', dtype), ('y', dtype)]
 
@@ -113,10 +89,10 @@ def _pca_filter_single_band(pca, cand_valid, ref_valid, threshold):
         pca, cand_valid, ref_valid)
 
     # Filter
-    pixels_pass_filter = numpy.nonzero(numpy.logical_and(
-        major_pca_values >= (threshold * -1), major_pca_values <= threshold))
+    pixels_pass_filter = numpy.logical_and(
+        major_pca_values >= (threshold * -1), major_pca_values <= threshold)
 
-    return pixels_pass_filter[0]
+    return pixels_pass_filter
 
 
 def _pca_transform_get_only_major_values(pca, cand_valid, ref_valid):
@@ -126,12 +102,3 @@ def _pca_transform_get_only_major_values(pca, cand_valid, ref_valid):
     X = _numpy_array_from_2arrays(cand_valid, ref_valid)
     X_trans = pca.transform(X)
     return numpy.array([x[1] for x in X_trans])
-
-
-def _create_pif_mask(passed_pixels, alpha):
-    ''' Converts the list of filtered pixels to a PIF array
-    '''
-    valid_pixels = numpy.nonzero(alpha.ravel())[0]
-    pif_vec = numpy.zeros(alpha.shape, dtype=numpy.bool).ravel()
-    pif_vec[valid_pixels[passed_pixels]] = 1
-    return numpy.reshape(pif_vec, alpha.shape)
