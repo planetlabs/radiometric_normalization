@@ -37,11 +37,24 @@ def generate_linear_relationship(candidate_band, reference_band, pif_mask):
 
     :returns: A LinearTransformation object (gain and offset)
     '''
-    logging.info('Transformation: Calculating linear relationship '
-                 'transformations')
-
     candidate_pifs = candidate_band[numpy.nonzero(pif_mask)]
     reference_pifs = reference_band[numpy.nonzero(pif_mask)]
+
+    return generate_linear_relationship_pixel_list(
+        candidate_pifs, reference_pifs)
+
+
+def generate_linear_relationship_pixel_list(candidate_pifs, reference_pifs):
+    ''' Performs PCA analysis on the valid pixels and filters according
+    to the distance from the principle eigenvector.
+
+    :param list candidate_pifs: A list of candidate PIF data
+    :param list reference_pifs: A list of coincident reference PIF data
+
+    :returns: A LinearTransformation object (gain and offset)
+    '''
+    logging.info('Transformation: Calculating linear relationship '
+                 'transformations')
 
     c_mean = numpy.mean(candidate_pifs)
     r_mean = numpy.mean(reference_pifs)
@@ -77,11 +90,23 @@ def generate_ols_regression(candidate_band, reference_band, pif_mask):
 
     :returns: A LinearTransformation object (gain and offset)
     '''
-    logging.info('Transformation: Calculating ordinary least squares '
-                 'regression transformations')
-
     candidate_pifs = candidate_band[numpy.nonzero(pif_mask)]
     reference_pifs = reference_band[numpy.nonzero(pif_mask)]
+
+    return generate_ols_regression_pixel_list(candidate_pifs, reference_pifs)
+
+
+def generate_ols_regression_pixel_list(candidate_pifs, reference_pifs):
+    ''' Performs PCA analysis on the valid pixels and filters according
+    to the distance from the principle eigenvector.
+
+    :param list candidate_pifs: A list of candidate PIF data
+    :param list reference_pifs: A list of coincident reference PIF data
+
+    :returns: A LinearTransformation object (gain and offset)
+    '''
+    logging.info('Transformation: Calculating ordinary least squares '
+                 'regression transformations')
 
     gain, offset, r_value, p_value, std_err = linregress(
         candidate_pifs, reference_pifs)
@@ -94,8 +119,7 @@ def generate_ols_regression(candidate_band, reference_band, pif_mask):
 
 
 def generate_robust_fit(candidate_band, reference_band, pif_mask):
-    ''' Performs PCA analysis on the valid pixels and filters according
-    to the distance from the principle eigenvector.
+    ''' Performs a robust fit on the valid pixels.
 
     :param array candidate_band: A 2D array representing the image data of the
                                  candidate band
@@ -105,11 +129,22 @@ def generate_robust_fit(candidate_band, reference_band, pif_mask):
 
     :returns: A LinearTransformation object (gain and offset)
     '''
-    logging.info('Transformation: Calculating robust fit '
-                 'transformations')
-
     candidate_pifs = candidate_band[numpy.nonzero(pif_mask)]
     reference_pifs = reference_band[numpy.nonzero(pif_mask)]
+
+    return generate_robust_fit_pixel_list(candidate_pifs, reference_pifs)
+
+
+def generate_robust_fit_pixel_list(candidate_pifs, reference_pifs):
+    ''' Performs a robust fit on the valid pixels.
+
+    :param list candidate_pifs: A list of candidate PIF data
+    :param list reference_pifs: A list of coincident reference PIF data
+
+    :returns: A LinearTransformation object (gain and offset)
+    '''
+    logging.info('Transformation: Calculating robust fit '
+                 'transformations')
 
     gain, offset = robust.fit(candidate_pifs, reference_pifs)
     logging.info("Transformation: gain {}, offset {}".format(gain, offset))
