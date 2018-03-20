@@ -142,6 +142,7 @@ display_wrapper.create_all_bands_histograms(result_path, reference_path, 'Transf
 ##
 ```
 
+
 In the above example, the 'reference.tif', original candidate scene ('candidate.tif') and radiometrically normalized candidate scene ('normalized.tif') all displayed at the same intensity scale: 
 
 | Reference | Original | Transformed | PIF (red pixels) over Reference |
