@@ -98,7 +98,7 @@ def generate_robust_pifs(candidate_band, reference_band, combined_mask,
     return pif_mask
 
 
-def generate_robust_pifs_from_pixel_list(candidate_data, reference_data,
+def generate_robust_pifs_pixel_list(candidate_data, reference_data,
                                          parameters=DEFAULT_ROBUST_OPTIONS):
     ''' Performs a robust fit to the valid pixels and filters according
     to the distance from the fit line.
