@@ -19,8 +19,9 @@ sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
 
 sudo apt-get update
 sudo apt-get install -y --force-yes \
-    build-essential pylint pep8 \
-	libatlas-dev libatlas3gf-base \
+    build-essential \
+    pylint \
+    pep8 \
     python-dev \
     python-pip \
     python-numpy \
