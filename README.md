@@ -113,7 +113,7 @@ temporary_gimg = gimage.GImage([band_gimgs[b].bands[0] for b in ['blue', 'green'
 gimage.save(temporary_gimg, reference_path)
 ##
 
-parameters = pif.pca_options(limit=100)
+parameters = pif.pca_options(threshold=100)
 pif_mask = pif_wrapper.generate(candidate_path, reference_path, method='filter_PCA', last_band_alpha=True, method_options=parameters)
 
 ## OPTIONAL - Save out the PIF mask
