@@ -22,6 +22,7 @@ from radiometric_normalization import robust
 from radiometric_normalization import filtering
 
 from radiometric_normalization.utils import pixel_list_to_array
+from radiometric_normalization.utils import trim_pixel_list
 
 
 pca_options = namedtuple('pca_options', 'threshold')
@@ -87,7 +88,7 @@ def generate_robust_pifs(candidate_band, reference_band, combined_mask,
         candidate_band[valid_pixels], reference_band[valid_pixels], parameters)
 
     pif_mask = pixel_list_to_array(
-        valid_pixels, pif_pixels, candidate_band.shape)
+        trim_pixel_list(valid_pixels, pif_pixels), candidate_band.shape)
 
     _info_logging(candidate_band.size, numpy.nonzero(pif_mask))
 
@@ -146,7 +147,7 @@ def generate_pca_pifs(candidate_band, reference_band, combined_mask,
         candidate_band[valid_pixels], reference_band[valid_pixels], parameters)
 
     pif_mask = pixel_list_to_array(
-        valid_pixels, pif_pixels, candidate_band.shape)
+        trim_pixel_list(valid_pixels, pif_pixels), candidate_band.shape)
 
     _info_logging(candidate_band.size, numpy.nonzero(pif_mask))
 
