@@ -29,7 +29,7 @@ class Tests(unittest.TestCase):
         golden_pif_mask = numpy.array([[1, 1],
                                        [0, 1]], dtype=numpy.bool)
 
-        pif_mask = pif.generate_alpha_band_pifs(combined_alpha)
+        pif_mask = pif.generate_mask_pifs(combined_alpha)
 
         numpy.testing.assert_array_equal(pif_mask,
                                          golden_pif_mask)
@@ -56,25 +56,7 @@ class Tests(unittest.TestCase):
         passed_pixels = pca_filter._pca_filter_single_band(
             test_pca, [1.1, 2.5, 3, 10, 5], [1.1, 2.5, 2.5, 4, 5], 1)
         numpy.testing.assert_array_equal(passed_pixels,
-                                         numpy.array([0, 1, 2, 4]))
-
-    def test__PCA_PIF_single_band(self):
-        golden_pif_weight = numpy.array(
-            [[1, 0, 0, 1, 1],
-             [0, 0, 0, 1, 1],
-             [1, 1, 1, 1, 1],
-             [0, 0, 0, 0, 0],
-             [1, 1, 0, 0, 0]])
-        array_shape = (5, 5)
-        valid_pixels = numpy.array([0, 1, 2, 3, 4, 5, 6, 8, 9,
-                                    10, 11, 12, 13, 14, 15, 20, 21])
-        passed_pixels = numpy.array([0, 3, 4, 7, 8, 9, 10, 11,
-                                     12, 13, 15, 16])
-        alpha_vec = numpy.zeros(array_shape).ravel()
-        alpha_vec[valid_pixels] = 1
-        alpha = numpy.reshape(alpha_vec, array_shape)
-        pif_weight = pca_filter._create_pif_mask(passed_pixels, alpha)
-        numpy.testing.assert_array_equal(pif_weight, golden_pif_weight)
+                                         numpy.array([True,  True,  True, False,  True], dtype=bool))
 
     def test_generate_pca_pifs(self):
         ref_band = numpy.array([[10, 20, 30],
