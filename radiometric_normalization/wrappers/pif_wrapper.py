@@ -16,7 +16,7 @@ import numpy
 from osgeo import gdal
 
 from radiometric_normalization import gimage
-from radiometric_normalization import pif
+from radiometric_normalization import pif, pif_modified
 
 
 def generate(candidate_path, reference_path,
@@ -64,8 +64,8 @@ def generate(candidate_path, reference_path,
             logging.info('PIF: Band {}'.format(band_no))
             c_band = gimage.read_single_band(c_ds, band_no)
             r_band = gimage.read_single_band(r_ds, band_no)
-            pif_band_mask = pif.generate_pca_pifs(
-                c_band, r_band, combined_alpha, parameters)
+            pif_band_mask = pif_modified.generate_pca_pifs(
+                c_band, r_band, combined_alpha)
             pif_mask = numpy.logical_and(pif_mask, pif_band_mask)
 
         no_total_pixels = c_alpha.size
