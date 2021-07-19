@@ -1,0 +1,77 @@
+# MSVC makefile for TV deconvolution IPOL demo
+# Pascal Getreuer
+# May 16, 2012
+
+
+#
+# FFTW3 is required to build tvreg.  Windows DLLs are available at
+#    http://www.fftw.org/install/windows.html
+# Please see the tvreg documentation for step by step instructions
+# for compiling tvreg with MSVC.
+#
+# Please specify the locations of fftw3.h and the FFTW libs
+#
+LIBFFTW3_DIR     = "D:/libs/fftw"
+LIBFFTW3_INCLUDE = -I$(LIBFFTW3_DIR)
+LIBFFTW3_LIB     = $(LIBFFTW3_DIR)/libfftw3-3.lib $(LIBFFTW3_DIR)/libfftw3f-3.lib
+
+# Uncomment and edit the following lines for JPEG support.
+#LIBJPEG_DIR     = "D:/libs/jpeg-8b"
+#LIBJPEG_INCLUDE = -I$(LIBJPEG_DIR)
+#LIBJPEG_LIB     = $(LIBJPEG_DIR)/libjpeg.lib
+
+# Uncomment and edit the following lines for PNG support.
+#ZLIB_DIR     = "D:/libs/zlib"
+#ZLIB_INCLUDE = -I$(ZLIB_DIR)
+#ZLIB_LIB     = $(ZLIB_DIR)/zlib.lib
+#LIBPNG_DIR     = "D:/libs/lpng143"
+#LIBPNG_INCLUDE = -I$(LIBPNG_DIR)
+#LIBPNG_LIB     = $(LIBPNG_DIR)/libpng.lib
+
+TVREG_FLAGS=-DTVREG_DECONV -DTVREG_NONGAUSSIAN -DNUM_SINGLE
+
+##
+# Standard make settings
+CFLAGS=-O2 -W3 $(TVREG_FLAGS) \
+	-D_CRT_SECURE_NO_WARNINGS \
+	$(LIBFFTW3_INCLUDE) $(LIBJPEG_INCLUDE) $(LIBPNG_INCLUDE) $(ZLIB_INCLUDE)
+LDFLAGS=-NODEFAULTLIB:libcmtd -NODEFAULTLIB:msvcrt \
+	$(LIBJPEG_LIB) $(LIBPNG_LIB) $(ZLIB_LIB) $(LIBFFTW3_LIB)
+
+TVDECONV_SOURCES=tvdeconv.c tvreg.c kernels.c cliio.c imageio.c basic.c
+IMBLUR_SOURCES=imblur.c kernels.c randmt.c cliio.c imageio.c basic.c
+IMDIFF_SOURCES=imdiff.c conv.c imageio.c basic.c
+
+##
+# These statements add compiler flags to define LIBJPEG_SUPPORT, etc.,
+# depending on which libraries have been specified above.
+!IFDEF LIBJPEG_LIB
+CJPEG=-DLIBJPEG_SUPPORT
+!ENDIF
+
+!IFDEF LIBPNG_LIB
+CPNG=-DLIBPNG_SUPPORT
+!ENDIF
+
+ALLCFLAGS=$(NUM_SINGLE) $(CFLAGS) $(CJPEG) $(CPNG)
+TVDECONV_OBJECTS=$(TVDECONV_SOURCES:.c=.obj)
+IMBLUR_OBJECTS=$(IMBLUR_SOURCES:.c=.obj)
+IMDIFF_OBJECTS=$(IMDIFF_SOURCES:.c=.obj)
+
+all: tvdeconv.exe imblur.exe imdiff.exe
+
+tvdeconv.exe: $(TVDECONV_OBJECTS)
+	link $(LDFLAGS) $(TVDECONV_OBJECTS) -out:$@
+
+imblur.exe: $(IMBLUR_OBJECTS)
+	link $(LDFLAGS) $(IMBLUR_OBJECTS) -out:$@
+
+imdiff.exe: $(IMDIFF_OBJECTS)
+	link $(LDFLAGS) $(IMDIFF_OBJECTS) -out:$@
+
+.c.obj:
+	$(CC) -c $(ALLCFLAGS) -Tc $<
+
+clean:
+	del -f -q $(TVDECONV_OBJECTS) $(IMBLUR_OBJECTS) $(IMDIFF_OBJECTS) \
+	tvdeconv.exe imblur.exe imdiff.exe

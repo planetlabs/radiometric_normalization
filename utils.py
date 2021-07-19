@@ -25,7 +25,7 @@ def compute_score(kernel_filepath):
     
     return score
 
-def perform_data_process_rewrite(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA'):
+def perform_data_process_write(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA'):
     """
     Definition: Function to perform normalization and deblurring of image_path wrt referenced image
     image_path: Image to be processed
@@ -105,16 +105,14 @@ def perform_data_process_rewrite(image_path, ref_image_path=None,out_directory=N
     result_path = outpath if out_path else os.path.join(out_directory or os.path.dirname(image_path), f"{image_name}_norm_deblur{extension}")
     if deblur:
         kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
-        bashCommand = '../planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
+        bashCommand = 'planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
         print(bashCommand.split())
         process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
-#         process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-#         output, error = process.communicate()
-        bashCommand = '../planetscope_sharpness/deconv {} {} {}'.format(norm_path, kernel_path, result_path)
+
+        bashCommand = 'planetscope_sharpness/deconv {} {} {}'.format(norm_path, kernel_path, result_path)
         print(bashCommand.split())
         process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
-#         process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-#         output, error = process.communicate()
+
         gimg_deblurred = gimage.load(result_path)
         temporary_gimg = gimage.GImage(gimg_deblurred.bands,alpha = norm_gimg.alpha, metadata = norm_gimg.metadata)
         gimage.save(temporary_gimg, result_path)

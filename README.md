@@ -158,3 +158,15 @@ You can compare the per-band DN to DN plots and the histograms of the reference 
 | Red band DN-DN plot | ![Original_3.png](images/Original_3.png?raw=true) | ![Transformed_3.png](images/Transformed_3.png?raw=true) |
 | NIR band DN-DN plot | ![Original_4.png](images/Original_4.png?raw=true) | ![Transformed_4.png](images/Transformed_4.png?raw=true) |
 | Histogram | ![Original_histograms.png](images/Original_histograms.png?raw=true) | ![Transformed_histograms.png](images/Transformed_histograms.png?raw=true) |
+
+# PlanetScope Sharpness
+
+Follow the below instructions:
+
+```
+sudo apt-get install -y libfftw3-dev
+```
+```
+cd planetscope_sharpness
+make
+```
