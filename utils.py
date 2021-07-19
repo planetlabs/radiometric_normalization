@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 import sys
+import rasterio
 
 from pathlib import Path
 import numpy as np
@@ -106,11 +107,11 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
     if deblur:
         kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
         bashCommand = 'planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
-        print(bashCommand.split())
+        logging.info(bashCommand)
         process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
 
         bashCommand = 'planetscope_sharpness/deconv {} {} {}'.format(norm_path, kernel_path, result_path)
-        print(bashCommand.split())
+        logging.info(bashCommand)
         process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
 
         gimg_deblurred = gimage.load(result_path)
