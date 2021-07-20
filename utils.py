@@ -26,7 +26,7 @@ def compute_score(kernel_filepath):
     
     return score
 
-def perform_data_process(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA'):
+def perform_data_process(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA', source = 'PLANET'):
     """
     Definition: Function to perform normalization and deblurring of image_path wrt referenced image
     image_path: Image to be processed
@@ -60,7 +60,7 @@ def perform_data_process(image_path, ref_image_path=None,out_directory=None, out
                 logging.info("Switching to default region reference file")
         if reference_path is None:
             if os.path.exists(region_reference_file_path):
-                reference_path = dict(json.load(open(region_reference_file_path))).get(region,{}).get(product, {}).get('reference_image')
+                reference_path = dict(json.load(open(region_reference_file_path))).get(region,{}).get(product, {}).get(source,{}).get('reference_image')
             else:
                 raise Exception('Region reference file %s not present', (region_reference_file_path))
             if reference_path is None or not os.path.exists(reference_path): 
@@ -106,11 +106,14 @@ def perform_data_process(image_path, ref_image_path=None,out_directory=None, out
     gimage.save(norm_gimg, norm_path)
     
     result_path = outpath if out_path else os.path.join(out_directory or os.path.dirname(image_path), f"{image_name}_norm_deblur{extension}")
+
+    kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
+    bashCommand = 'planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
+    logging.info(bashCommand)
+    process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
+    out_image_path = norm_path
     if deblur:
-        kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
-        bashCommand = 'planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
-        logging.info(bashCommand)
-        process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
+
 
         bashCommand = 'planetscope_sharpness/deconv {} {} {}'.format(norm_path, kernel_path, result_path)
         logging.info(bashCommand)
@@ -119,10 +122,12 @@ def perform_data_process(image_path, ref_image_path=None,out_directory=None, out
         gimg_deblurred = gimage.load(result_path)
         temporary_gimg = gimage.GImage(gimg_deblurred.bands,alpha = norm_gimg.alpha, metadata = norm_gimg.metadata)
         gimage.save(temporary_gimg, result_path)
+        os.remove(norm_path)
+        out_image_path = result_path
         
-        score = compute_score(kernel_path)
-        os.remove(kernel_path)
-        return score
-        
+    score = compute_score(kernel_path)
+    os.remove(kernel_path)
     os.remove(candidate_path)
     os.remove(reference_path)
+    return out_image_path, score
+        
