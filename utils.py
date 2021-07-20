@@ -104,11 +104,14 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
     gimage.save(norm_gimg, norm_path)
     
     result_path = outpath if out_path else os.path.join(out_directory or os.path.dirname(image_path), f"{image_name}_norm_deblur{extension}")
+
+    kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
+    bashCommand = 'planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
+    logging.info(bashCommand)
+    process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
+
     if deblur:
-        kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
-        bashCommand = 'planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
-        logging.info(bashCommand)
-        process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
+
 
         bashCommand = 'planetscope_sharpness/deconv {} {} {}'.format(norm_path, kernel_path, result_path)
         logging.info(bashCommand)
@@ -118,9 +121,9 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
         temporary_gimg = gimage.GImage(gimg_deblurred.bands,alpha = norm_gimg.alpha, metadata = norm_gimg.metadata)
         gimage.save(temporary_gimg, result_path)
         
-        score = compute_score(kernel_path)
-        os.remove(kernel_path)
-        return score
-        
+    score = compute_score(kernel_path)
+    os.remove(kernel_path)
     os.remove(candidate_path)
     os.remove(reference_path)
+    return score
+        
