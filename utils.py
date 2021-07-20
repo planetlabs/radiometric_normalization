@@ -120,6 +120,7 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
         gimg_deblurred = gimage.load(result_path)
         temporary_gimg = gimage.GImage(gimg_deblurred.bands,alpha = norm_gimg.alpha, metadata = norm_gimg.metadata)
         gimage.save(temporary_gimg, result_path)
+        os.remove(norm_path)
         
     score = compute_score(kernel_path)
     os.remove(kernel_path)
