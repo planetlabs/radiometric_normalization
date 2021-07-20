@@ -26,7 +26,7 @@ def compute_score(kernel_filepath):
     
     return score
 
-def perform_data_process_write(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA'):
+def perform_data_process_write(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA', source = 'PLANET'):
     """
     Definition: Function to perform normalization and deblurring of image_path wrt referenced image
     image_path: Image to be processed
@@ -58,7 +58,7 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
                 logging.info("Switching to default region reference file")
         if reference_path is None:
             if os.path.exists(region_reference_file_path):
-                reference_path = dict(json.load(open(region_reference_file_path))).get(region,{}).get(product, {}).get('reference_image')
+                reference_path = dict(json.load(open(region_reference_file_path))).get(region,{}).get(product, {}).get(source,{}).get('reference_image')
             else:
                 raise Exception('Region reference file %s not present', (region_reference_file_path))
             if reference_path is None or not os.path.exists(reference_path): 
