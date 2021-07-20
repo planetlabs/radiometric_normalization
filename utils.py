@@ -26,7 +26,7 @@ def compute_score(kernel_filepath):
     
     return score
 
-def perform_data_process_write(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA'):
+def perform_data_process(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA'):
     """
     Definition: Function to perform normalization and deblurring of image_path wrt referenced image
     image_path: Image to be processed
@@ -38,12 +38,14 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
     try:
         temp_folder = os.path.join(os.path.dirname(__file__), "temp")
         kernel_folder = os.path.join(os.path.dirname(__file__), "kernel")
+        region_reference_folder = os.path.dirname(__file__)
     except:
         temp_folder = os.path.join(".","temp")
         kernel_folder = os.path.join(".", "kernel")
+        region_reference_folder = "."
     os.makedirs(temp_folder, exist_ok=True)
     os.makedirs(kernel_folder, exist_ok=True)
-    region_reference_file_path =  'region_reference.json'
+    region_reference_file_path =  os.path.join(region_reference_folder, 'region_reference.json')
     image_name = Path(image_path).stem
     extension = Path(image_path).suffix
     region = image_name.split('_')[0]
