@@ -109,7 +109,7 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
     bashCommand = 'planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
     logging.info(bashCommand)
     process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
-
+    out_image_path = norm_path
     if deblur:
 
 
@@ -121,10 +121,11 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
         temporary_gimg = gimage.GImage(gimg_deblurred.bands,alpha = norm_gimg.alpha, metadata = norm_gimg.metadata)
         gimage.save(temporary_gimg, result_path)
         os.remove(norm_path)
+        out_image_path = result_path
         
     score = compute_score(kernel_path)
     os.remove(kernel_path)
     os.remove(candidate_path)
     os.remove(reference_path)
-    return score
+    return out_image_path, score
         
