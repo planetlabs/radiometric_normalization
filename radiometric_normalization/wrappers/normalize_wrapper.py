@@ -12,8 +12,8 @@ limitations under the License.
 '''
 from osgeo import gdal
 
-from radiometric_normalization import gimage
-from radiometric_normalization import normalize
+import gimage
+import normalize
 
 
 def generate(image_path, per_band_transformation, last_band_alpha=False):

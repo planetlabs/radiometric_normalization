@@ -16,7 +16,7 @@ limitations under the License.
 import numpy
 import logging
 
-from radiometric_normalization import gimage
+import gimage
 
 
 def generate(image_paths, output_path,
