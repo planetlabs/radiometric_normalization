@@ -26,7 +26,7 @@ def compute_score(kernel_filepath):
     
     return score
 
-def perform_data_process_write(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA', source = 'PLANET'):
+def perform_data_process(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA', source = 'PLANET'):
     """
     Definition: Function to perform normalization and deblurring of image_path wrt referenced image
     image_path: Image to be processed
