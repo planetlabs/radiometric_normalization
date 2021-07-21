@@ -9,12 +9,12 @@ from pathlib import Path
 import numpy as np
 from osgeo import gdal
 
-from radiometric_normalization.wrappers import display_wrapper
-from radiometric_normalization.wrappers import pif_wrapper
-from radiometric_normalization.wrappers import transformation_wrapper
-from radiometric_normalization.wrappers import normalize_wrapper
-from radiometric_normalization import gimage
-from radiometric_normalization import pif
+from wrappers import display_wrapper
+from wrappers import pif_wrapper
+from wrappers import transformation_wrapper
+from wrappers import normalize_wrapper
+import gimage
+import pif
 
 def compute_score(kernel_filepath):
     
@@ -108,14 +108,15 @@ def perform_data_process(image_path, ref_image_path=None,out_directory=None, out
     result_path = outpath if out_path else os.path.join(out_directory or os.path.dirname(image_path), f"{image_name}_norm_deblur{extension}")
 
     kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
-    bashCommand = 'planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
+    estimate_kernel_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'planetscope_sharpness','estimate-kernel')
+    bashCommand = '{} 35 {} {}'.format(os.path.realpath(estimate_kernel_path), norm_path, kernel_path)
     logging.info(bashCommand)
     process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
     out_image_path = norm_path
     if deblur:
 
-
-        bashCommand = 'planetscope_sharpness/deconv {} {} {}'.format(norm_path, kernel_path, result_path)
+        deconv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'planetscope_sharpness', 'deconv')
+        bashCommand = '{} {} {} {}'.format(os.path.realpath(deconv_path), norm_path, kernel_path, result_path)
         logging.info(bashCommand)
         process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
 
