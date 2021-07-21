@@ -23,7 +23,7 @@ def generate_pca_pifs(candidate_band, reference_band, combined_mask):
     
     phase_difference = numpy.abs(phase_candidate_blurred-phase_reference_blurred)
     
-    pif_mask = (phase_difference < 2.5*numpy.mean(phase_difference))
+    pif_mask = (phase_difference <= 2.5*numpy.mean(phase_difference))
     
     pif_mask[numpy.logical_not(combined_mask)] = False
 

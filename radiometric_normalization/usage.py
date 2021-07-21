@@ -106,14 +106,14 @@ def perform_data_process_write(image_path, ref_image_path=None,out_directory=Non
     result_path = outpath if out_path else os.path.join(out_directory or os.path.dirname(image_path), f"{image_name}_norm_deblur{extension}")
 
     kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
-    bashCommand = '../planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
+    bashCommand = '/data/intern_sagnik/radiometric_normalization/planetscope_sharpness/estimate-kernel 35 {} {}'.format(norm_path, kernel_path)
     logging.info(bashCommand)
     process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
     out_image_path = norm_path
     if deblur:
 
 
-        bashCommand = '../planetscope_sharpness/deconv {} {} {}'.format(norm_path, kernel_path, result_path)
+        bashCommand = '/data/intern_sagnik/radiometric_normalization/planetscope_sharpness/deconv {} {} {}'.format(norm_path, kernel_path, result_path)
         logging.info(bashCommand)
         process = subprocess.run(bashCommand.split(), stdout=1, stderr=2)
 
