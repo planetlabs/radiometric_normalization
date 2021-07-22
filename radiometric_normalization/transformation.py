@@ -18,7 +18,7 @@ import logging
 from collections import namedtuple
 from scipy.stats import linregress
 
-import robust
+from radiometric_normalization import robust
 
 
 # Gain and offset are floats
