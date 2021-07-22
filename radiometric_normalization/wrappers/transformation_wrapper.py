@@ -12,8 +12,8 @@ limitations under the License.
 '''
 from osgeo import gdal
 
-import gimage
-import transformation
+from radiometric_normalization import gimage
+from radiometric_normalization import transformation
 
 
 def generate(candidate_path, reference_path, pif_mask,

@@ -16,7 +16,7 @@ limitations under the License.
 import logging
 import numpy
 
-from utils import pixel_list_to_array
+from radiometric_normalization.utils import pixel_list_to_array
 
 
 def filter_by_residuals_from_line(candidate_band, reference_band,

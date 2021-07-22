@@ -9,12 +9,12 @@ from pathlib import Path
 import numpy as np
 from osgeo import gdal
 
-from wrappers import display_wrapper
-from wrappers import pif_wrapper
-from wrappers import transformation_wrapper
-from wrappers import normalize_wrapper
-import gimage
-import pif
+from radiometric_normalization.wrappers import display_wrapper
+from radiometric_normalization.wrappers import pif_wrapper
+from radiometric_normalization.wrappers import transformation_wrapper
+from radiometric_normalization.wrappers import normalize_wrapper
+from radiometric_normalization import gimage
+from radiometric_normalization import pif
 
 def compute_score(kernel_filepath):
     

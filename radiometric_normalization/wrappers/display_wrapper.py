@@ -16,8 +16,8 @@ limitations under the License.
 import numpy
 from osgeo import gdal
 
-import display
-import gimage
+from radiometric_normalization import display
+from radiometric_normalization import gimage
 
 
 def create_pixel_plots(candidate_path, reference_path, base_name,
