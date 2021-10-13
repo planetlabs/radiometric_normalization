@@ -26,7 +26,7 @@ def compute_score(kernel_filepath):
     
     return score
 
-def perform_data_process(image_path, ref_image_path=None,out_directory=None, out_path=None, deblur=False, product='TOA', source = 'PLANET'):
+def perform_data_process(image_path, ref_image_path=None, out_directory=None, out_path=None, deblur=False, product='TOA', source='PLANET', band_count=None):
     """
     Definition: Function to perform normalization and deblurring of image_path wrt referenced image
     image_path: Image to be processed
@@ -73,17 +73,27 @@ def perform_data_process(image_path, ref_image_path=None,out_directory=None, out
     
     reference_gimg = gimage.load(reference_path)
     candidate_gimg = gimage.load(candidate_path)
+    if band_count is None:
+        band_count = min(rasterio.open(reference_path).count, rasterio.open(candidate_path).count)
 
-    alpha_c = np.logical_not(candidate_gimg.bands[0]==0) # alpha mask
+    alpha_c = True # alpha mask
+    for band_num in range(band_count):
+        alpha_band = np.logical_not(reference_gimg.bands[band_num]==0)
+        if any(alpha_band):
+            alpha_c = np.logical_and(alpha_c, alpha_band)
+    for band_num in range(band_count):
+        alpha_band = np.logical_not(candidate_gimg.bands[band_num]==0)
+        if any(alpha_band):
+            alpha_c = np.logical_and(alpha_c, alpha_band)
 
-    temporary_gimg = gimage.GImage([candidate_gimg.bands[i] for i in range(0, 4)], alpha_c, candidate_gimg.metadata)
+    temporary_gimg = gimage.GImage([candidate_gimg.bands[band_num] for band_num in range(band_count)], alpha_c, candidate_gimg.metadata)
     
     candidate_path = os.path.join(temp_folder, 'candidate_'+image_name+extension)
     reference_path = os.path.join(temp_folder, 'reference_'+image_name+extension)
 
     gimage.save(temporary_gimg, candidate_path)
 
-    temporary_gimg = gimage.GImage([reference_gimg.bands[i] for i in range(0, 4)], alpha_c, reference_gimg.metadata)
+    temporary_gimg = gimage.GImage([reference_gimg.bands[band_num] for band_num in range(band_count)], alpha_c, reference_gimg.metadata)
 
     gimage.save(temporary_gimg, reference_path)
 
@@ -101,7 +111,7 @@ def perform_data_process(image_path, ref_image_path=None,out_directory=None, out
         band[np.logical_not(alpha_c)] = 0
         bands.append(band)
 
-    norm_gimg = gimage.GImage([bands[i] for i in range(0, 4)], alpha_c, reference_gimg.metadata)
+    norm_gimg = gimage.GImage([bands[band_num] for band_num in range(band_count)], alpha_c, reference_gimg.metadata)
     norm_path = outpath if out_path else os.path.join(out_directory or os.path.dirname(image_path), f"{image_name}_norm{extension}")
     gimage.save(norm_gimg, norm_path)
     
