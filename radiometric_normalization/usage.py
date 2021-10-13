@@ -79,11 +79,11 @@ def perform_data_process(image_path, ref_image_path=None, out_directory=None, ou
     alpha_c = True # alpha mask
     for band_num in range(band_count):
         alpha_band = np.logical_not(reference_gimg.bands[band_num]==0)
-        if any(alpha_band):
+        if alpha_band.any():
             alpha_c = np.logical_and(alpha_c, alpha_band)
     for band_num in range(band_count):
         alpha_band = np.logical_not(candidate_gimg.bands[band_num]==0)
-        if any(alpha_band):
+        if alpha_band.any():
             alpha_c = np.logical_and(alpha_c, alpha_band)
 
     temporary_gimg = gimage.GImage([candidate_gimg.bands[band_num] for band_num in range(band_count)], alpha_c, candidate_gimg.metadata)
