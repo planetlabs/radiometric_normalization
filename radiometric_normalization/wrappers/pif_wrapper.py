@@ -15,8 +15,8 @@ import numpy
 
 from osgeo import gdal
 
-from radiometric_normalization import gimage
-from radiometric_normalization import pif, pif_modified
+from radiometric_normalization.radiometric_normalization import gimage
+from radiometric_normalization.radiometric_normalization import pif, pif_modified
 
 
 def generate(candidate_path, reference_path,

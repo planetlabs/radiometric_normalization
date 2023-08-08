@@ -7,12 +7,12 @@ import rasterio
 from pathlib import Path
 import numpy as np
 from osgeo import gdal
-from radiometric_normalization.wrappers import display_wrapper
-from radiometric_normalization.wrappers import pif_wrapper
-from radiometric_normalization.wrappers import transformation_wrapper
-from radiometric_normalization.wrappers import normalize_wrapper
-from radiometric_normalization import gimage
-from radiometric_normalization import pif
+from .wrappers import display_wrapper
+from .wrappers import pif_wrapper
+from .wrappers import transformation_wrapper
+from .wrappers import normalize_wrapper
+from . import gimage
+from . import pif
 
 def compute_score(kernel_filepath):
     kernel = rasterio.open(kernel_filepath).read(1)
@@ -119,10 +119,10 @@ def perform_data_process(image_path, ref_image_path=None, out_directory=None, ou
 
     norm_gimg = gimage.GImage([bands[band_num] for band_num in range(
         band_count)], alpha_c, reference_gimg.metadata)
-    norm_path = outpath if out_path else os.path.join(
+    norm_path = out_path if out_path else os.path.join(
         out_directory or os.path.dirname(image_path), f"{image_name}_norm{extension}")
     gimage.save(norm_gimg, norm_path)
-    result_path = outpath if out_path else os.path.join(
+    result_path = out_path if out_path else os.path.join(
         out_directory or os.path.dirname(image_path), f"{image_name}_norm_deblur{extension}")
     kernel_path = os.path.join(kernel_folder, 'kernel_'+image_name+'.tif')
     estimate_kernel_path = os.path.join(os.path.dirname(

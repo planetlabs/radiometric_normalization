@@ -17,12 +17,12 @@ import logging
 import numpy
 from collections import namedtuple
 
-from radiometric_normalization import pca_filter
-from radiometric_normalization import robust
-from radiometric_normalization import filtering
+from radiometric_normalization.radiometric_normalization import pca_filter
+from radiometric_normalization.radiometric_normalization import robust
+from radiometric_normalization.radiometric_normalization import filtering
 
-from radiometric_normalization.utils import pixel_list_to_array
-from radiometric_normalization.utils import trim_pixel_list
+from radiometric_normalization.radiometric_normalization.utils import pixel_list_to_array
+from radiometric_normalization.radiometric_normalization.utils import trim_pixel_list
 
 
 pca_options = namedtuple('pca_options', 'threshold')
